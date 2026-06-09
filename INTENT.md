@@ -24,10 +24,12 @@ completes the pair.
 ## The channel shape
 
 The meta plane's baseline content is daemon configuration. The channel carries
-a single `Configure` operation whose payload is `CriomeDaemonConfiguration`
-(the daemon's socket and `criome.sema` store location). This mirrors the
-daemon's binary startup record; later reconfiguration arrives over this meta
-plane as the same typed record, never as flags.
+a single `Configure` operation whose payload is
+`signal_criome::CriomeDaemonConfiguration` (the daemon's socket and
+`criome.sema` store location). This is the same record the criome daemon decodes
+at binary startup, so startup and meta reconfiguration share one definition that
+lives in the ordinary `signal-criome` contract; later reconfiguration arrives
+over this meta plane as that record, never as flags.
 
 - **Request:** `Configure(CriomeDaemonConfiguration)`.
 - **Replies:** `Configured`, `ConfigurationRejected` (typed reason),
@@ -36,11 +38,3 @@ plane as the same typed record, never as flags.
 The root-of-trust material that "Criome verifies; Persona decides" rests on is
 daemon configuration and so extends the `Configure` payload rather than
 appearing as bespoke operations.
-
-## Pending reconciliation
-
-`CriomeDaemonConfiguration` is defined here as the canonical contract home. The
-`criome` daemon currently defines an equivalent shape locally
-(`criome/src/daemon.rs`); it should adopt this type so startup decoding and
-meta reconfiguration share one record. Pre-production reconciliation — no
-backward-compatibility constraint.
