@@ -7,71 +7,14 @@
 //! root-of-trust material that "Criome verifies; Persona decides" rests on.
 //!
 //! The basic meta operation of every component is daemon configuration. The
-//! `CriomeDaemonConfiguration` here mirrors the daemon's startup record; it is
-//! the canonical contract home for that configuration. The `criome` daemon
-//! currently defines an equivalent shape locally and should adopt this type so
-//! startup and meta reconfiguration share one record (pre-production
-//! reconciliation, no compatibility constraint).
+//! `Configure` payload is `signal_criome::CriomeDaemonConfiguration` — the same
+//! record the daemon decodes at binary startup — so startup and meta
+//! reconfiguration share one definition that lives in the ordinary contract.
 
 use nota_next::{Block, NotaBlock, NotaDecode, NotaDecodeError, NotaEncode};
 use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
 use signal_frame::signal_channel;
-
-#[derive(
-    Archive,
-    RkyvSerialize,
-    RkyvDeserialize,
-    NotaEncode,
-    NotaDecode,
-    Debug,
-    Clone,
-    PartialEq,
-    Eq,
-    Hash,
-)]
-pub struct DaemonSocketPath(String);
-
-impl DaemonSocketPath {
-    pub fn new(value: impl Into<String>) -> Self {
-        Self(value.into())
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-#[derive(
-    Archive,
-    RkyvSerialize,
-    RkyvDeserialize,
-    NotaEncode,
-    NotaDecode,
-    Debug,
-    Clone,
-    PartialEq,
-    Eq,
-    Hash,
-)]
-pub struct DaemonStorePath(String);
-
-impl DaemonStorePath {
-    pub fn new(value: impl Into<String>) -> Self {
-        Self(value.into())
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-#[derive(
-    Archive, RkyvSerialize, RkyvDeserialize, NotaEncode, NotaDecode, Debug, Clone, PartialEq, Eq,
-)]
-pub struct CriomeDaemonConfiguration {
-    pub socket_path: DaemonSocketPath,
-    pub store_path: DaemonStorePath,
-}
+pub use signal_criome::CriomeDaemonConfiguration;
 
 #[derive(
     Archive, RkyvSerialize, RkyvDeserialize, Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord,
