@@ -1,24 +1,34 @@
-//! Meta signal contract — privileged `criome` daemon configuration.
+//! Meta signal contract - privileged `criome` daemon configuration.
 //!
 //! Ordinary criome trust traffic (sign, verify, identity, attestation,
 //! authorization) lives in `signal-criome`. This crate carries the meta plane:
 //! the authenticated `Configure` operation that applies `criome`'s typed daemon
-//! configuration — its socket and its `criome.sema` store location, and the
+//! configuration - its socket and its `criome.sema` store location, and the
 //! root-of-trust material that "Criome verifies; Persona decides" rests on.
 //!
 //! The basic meta operation of every component is daemon configuration. The
-//! `Configure` payload is `signal_criome::CriomeDaemonConfiguration` — the same
-//! record the daemon decodes at binary startup — so startup and meta
+//! `Configure` payload is `signal_criome::CriomeDaemonConfiguration` - the same
+//! record the daemon decodes at binary startup - so startup and meta
 //! reconfiguration share one definition that lives in the ordinary contract.
 
 #[cfg(feature = "nota-text")]
 use nota_next::{Block, NotaBlock, NotaDecode, NotaDecodeError, NotaEncode};
 use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
-use signal_frame::signal_channel;
 pub use signal_criome::CriomeDaemonConfiguration;
+use signal_frame::signal_channel;
 
 #[derive(
-    Archive, RkyvSerialize, RkyvDeserialize, Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    PartialOrd,
+    Ord,
 )]
 pub struct ConfigurationGeneration(u64);
 
