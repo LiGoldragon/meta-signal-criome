@@ -1,0 +1,43 @@
+;; meta-signal-criome — meta-only authority/configuration wire
+;; contract for the criome daemon.
+;;
+;; Wire-only: emits the rkyv + optional NOTA codec and the
+;; signal-frame request/reply envelope. Ordinary trust traffic stays in
+;; signal-criome; daemon runtime, sockets, actors, and storage stay in
+;; criome.
+;;
+;; SHARED-TYPE OWNERSHIP. The daemon startup configuration is defined
+;; once in the ordinary signal-criome contract and cross-imported here
+;; with the single-colon path form signal-criome:lib:TypeName. Startup
+;; and meta reconfiguration therefore share one type identity.
+
+{
+  CriomeDaemonConfiguration signal-criome:lib:CriomeDaemonConfiguration
+}
+[(Configure CriomeDaemonConfiguration)]
+[(Configured Configured)
+ (ConfigurationRejected ConfigurationRejected)
+ (RequestUnimplemented RequestUnimplemented)]
+{
+  ConfigurationGeneration Integer
+
+  Configured {
+    generation ConfigurationGeneration
+  }
+
+  ConfigurationRejectionReason [
+    ManagerAuthorityRequired
+    MalformedConfiguration
+    StoreUnavailable
+  ]
+  ConfigurationRejected {
+    reason ConfigurationRejectionReason
+  }
+
+  OperationKind [Configure]
+  UnimplementedReason [NotBuiltYet DependencyNotReady]
+  RequestUnimplemented {
+    operation OperationKind
+    reason UnimplementedReason
+  }
+}

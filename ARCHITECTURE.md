@@ -28,8 +28,12 @@ daemon decodes from its binary startup file.
 
 ## Code Map
 
-- `src/lib.rs` contains the wire records and `signal_frame::signal_channel!`
-  invocation.
+- `schema/lib.schema` is the source of the meta wire vocabulary.
+- `build.rs` runs `schema-rust-next` and imports
+  `signal_criome::CriomeDaemonConfiguration` from `signal-criome`.
+- `src/schema/lib.rs` is the checked-in generated artifact.
+- `src/lib.rs` re-exports the generated nouns and keeps only tiny
+  handwritten accessors.
 - `Cargo.toml` keeps `nota-text` optional and pins the rkyv feature set.
 - `flake.nix` builds, tests, formats, documents, and lints the contract in both
   no-feature and `nota-text` modes.
@@ -40,6 +44,5 @@ daemon decodes from its binary startup file.
 - Default builds are NOTA-free.
 - The meta contract reuses `signal_criome::CriomeDaemonConfiguration`; it does
   not mirror the daemon configuration record.
-- The current implementation is still hand-written with
-  `signal_frame::signal_channel!`. The destination shape is schema-derived
-  `WireContract`, matching the newer signal contract repos.
+- The implementation is schema-derived `WireContract`; no handwritten
+  `signal_frame::signal_channel!` remains.

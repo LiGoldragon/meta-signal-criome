@@ -1,0 +1,16 @@
+;; Canonical NOTA examples for meta-signal-criome.
+;;
+;; The Configure payload is signal-criome's CriomeDaemonConfiguration,
+;; imported rather than duplicated in this contract.
+
+;; Input::Configure
+(Configure (/run/criome/criome.sock /var/lib/criome/criome.sema))
+
+;; Output::Configured
+(Configured 7)
+
+;; Output::ConfigurationRejected
+(ConfigurationRejected ManagerAuthorityRequired)
+
+;; Output::RequestUnimplemented
+(RequestUnimplemented (Configure DependencyNotReady))

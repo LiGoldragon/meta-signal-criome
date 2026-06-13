@@ -193,6 +193,7 @@ version = "0.1.0"
 dependencies = [
  "nota-next",
  "rkyv",
+ "schema-rust-next",
  "signal-criome",
  "signal-frame",
  "thiserror",
