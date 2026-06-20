@@ -13,16 +13,20 @@
 
 {
   CriomeDaemonConfiguration signal-criome:lib:CriomeDaemonConfiguration
+  AuthorizationEvaluated signal-criome:lib:AuthorizationEvaluated
+  AuthorizationEvaluation signal-criome:lib:AuthorizationEvaluation
 }
-[(Configure CriomeDaemonConfiguration)]
+[(Configure CriomeDaemonConfiguration)
+ (SubmitAuthorizationApproval AuthorizationApproval)]
 [(Configured Configured)
+ (AuthorizationApprovalRecorded AuthorizationApprovalRecorded)
  (ConfigurationRejected ConfigurationRejected)
  (RequestUnimplemented RequestUnimplemented)]
 {
   ConfigurationGeneration Integer
 
   Configured {
-    generation ConfigurationGeneration
+    generation.ConfigurationGeneration
   }
 
   ConfigurationRejectionReason [
@@ -31,13 +35,26 @@
     StoreUnavailable
   ]
   ConfigurationRejected {
-    reason ConfigurationRejectionReason
+    reason.ConfigurationRejectionReason
   }
 
-  OperationKind [Configure]
+  AuthorizationApprovalDecision [
+    Approve
+    Reject
+    Defer
+  ]
+  AuthorizationApproval {
+    evaluation.AuthorizationEvaluation
+    decision.AuthorizationApprovalDecision
+  }
+  AuthorizationApprovalRecorded {
+    evaluated.AuthorizationEvaluated
+  }
+
+  OperationKind [Configure SubmitAuthorizationApproval]
   UnimplementedReason [NotBuiltYet DependencyNotReady]
   RequestUnimplemented {
-    operation OperationKind
-    reason UnimplementedReason
+    operation.OperationKind
+    reason.UnimplementedReason
   }
 }

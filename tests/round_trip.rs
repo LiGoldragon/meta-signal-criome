@@ -1,12 +1,18 @@
 //! Round-trip witnesses for the schema-derived criome meta contract.
 
 use meta_signal_criome::{
-    ConfigurationGeneration, ConfigurationRejected, ConfigurationRejectionReason,
-    CriomeDaemonConfiguration, Frame, FrameBody, Input, OperationKind, Output,
-    RequestUnimplemented, UnimplementedReason,
+    AuthorizationApproval, AuthorizationApprovalDecision, ConfigurationGeneration,
+    ConfigurationRejected, ConfigurationRejectionReason, CriomeDaemonConfiguration, Frame,
+    FrameBody, Input, OperationKind, Output, RequestUnimplemented, UnimplementedReason,
 };
 #[cfg(feature = "nota-text")]
 use nota_next::{NotaDecode, NotaEncode, NotaSource};
+use signal_criome::{
+    AttestedMoment, AttestedMomentProposition, AuthorizationEvaluated, AuthorizationEvaluation,
+    AuthorizedObjectKind, AuthorizedObjectReference, ComponentKind, ContractDigest,
+    EvaluationDecision, Evidence, OperationDigest, RequiredSignatureThreshold, TimeWindow,
+    TimestampNanos,
+};
 use signal_frame::{
     ExchangeIdentifier, ExchangeLane, LaneSequence, NonEmpty, Reply, RequestPayload, SessionEpoch,
     SubReply,
@@ -22,6 +28,35 @@ fn exchange() -> ExchangeIdentifier {
 
 fn configuration() -> CriomeDaemonConfiguration {
     CriomeDaemonConfiguration::new("/run/criome/criome.sock", "/var/lib/criome/criome.sema")
+}
+
+fn evaluation() -> AuthorizationEvaluation {
+    let operation = OperationDigest::from_bytes(b"mentci-meta-approval");
+    AuthorizationEvaluation {
+        contract: ContractDigest::from_bytes(b"approval-contract"),
+        object: AuthorizedObjectReference {
+            component: ComponentKind::Spirit,
+            digest: operation.object_digest().clone(),
+            kind: AuthorizedObjectKind::Head,
+        },
+        evidence: Evidence::new(
+            ComponentKind::Spirit,
+            operation,
+            AttestedMoment::new(
+                AttestedMomentProposition::new(
+                    TimeWindow {
+                        opens_at: TimestampNanos::new(1),
+                        closes_at: TimestampNanos::new(2),
+                    },
+                    RequiredSignatureThreshold::new(1),
+                    Vec::new(),
+                ),
+                Vec::new(),
+            ),
+            Vec::new(),
+            Vec::new(),
+        ),
+    }
 }
 
 fn assert_request_round_trips(request: Input) {
@@ -81,9 +116,24 @@ fn configure_request_carries_the_signal_criome_configuration_type() {
 }
 
 #[test]
+fn authorization_approval_request_round_trips() {
+    let request = Input::SubmitAuthorizationApproval(AuthorizationApproval {
+        evaluation: evaluation(),
+        decision: AuthorizationApprovalDecision::Approve,
+    });
+    assert_request_round_trips(request.clone());
+    #[cfg(feature = "nota-text")]
+    assert_nota_round_trips(&request);
+}
+
+#[test]
 fn reply_variants_round_trip() {
     let replies = [
         Output::configured(ConfigurationGeneration::new(7)),
+        Output::authorization_approval_recorded(AuthorizationEvaluated {
+            contract: ContractDigest::from_bytes(b"approval-contract"),
+            decision: EvaluationDecision::Authorized,
+        }),
         Output::ConfigurationRejected(ConfigurationRejected::new(
             ConfigurationRejectionReason::ManagerAuthorityRequired,
         )),

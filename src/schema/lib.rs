@@ -11,6 +11,10 @@ pub type Path = std::string::String;
 
 #[rustfmt::skip]
 pub use signal_criome::schema::lib::CriomeDaemonConfiguration as CriomeDaemonConfiguration;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::AuthorizationEvaluated as AuthorizationEvaluated;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::AuthorizationEvaluation as AuthorizationEvaluation;
 
 #[rustfmt::skip]
 #[cfg(feature = "nota-text")]
@@ -61,8 +65,40 @@ pub struct ConfigurationRejected(ConfigurationRejectionReason);
     PartialEq,
     Eq,
 )]
+pub enum AuthorizationApprovalDecision {
+    Approve,
+    Reject,
+    Defer,
+}
+
+#[rustfmt::skip]
+#[cfg_attr(feature = "nota-text", derive(nota_next::NotaDecode, nota_next::NotaEncode))]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct AuthorizationApproval {
+    pub evaluation: AuthorizationEvaluation,
+    pub decision: AuthorizationApprovalDecision,
+}
+
+#[rustfmt::skip]
+#[cfg_attr(feature = "nota-text", derive(nota_next::NotaDecode, nota_next::NotaEncode))]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct AuthorizationApprovalRecorded(AuthorizationEvaluated);
+
+#[rustfmt::skip]
+#[cfg_attr(feature = "nota-text", derive(nota_next::NotaDecode, nota_next::NotaEncode))]
+#[derive(
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+)]
 pub enum OperationKind {
     Configure,
+    SubmitAuthorizationApproval,
 }
 
 #[rustfmt::skip]
@@ -95,6 +131,7 @@ pub struct RequestUnimplemented {
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Input {
     Configure(CriomeDaemonConfiguration),
+    SubmitAuthorizationApproval(AuthorizationApproval),
 }
 
 #[rustfmt::skip]
@@ -102,6 +139,7 @@ pub enum Input {
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Output {
     Configured(Configured),
+    AuthorizationApprovalRecorded(AuthorizationApprovalRecorded),
     ConfigurationRejected(ConfigurationRejected),
     RequestUnimplemented(RequestUnimplemented),
 }
@@ -122,24 +160,6 @@ impl ConfigurationGeneration {
 impl From<Integer> for ConfigurationGeneration {
     fn from(payload: Integer) -> Self {
         Self::new(payload)
-    }
-}
-#[rustfmt::skip]
-impl std::fmt::Display for ConfigurationGeneration {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.payload().fmt(formatter)
-    }
-}
-#[rustfmt::skip]
-impl PartialEq<u64> for ConfigurationGeneration {
-    fn eq(&self, other: &u64) -> bool {
-        self.payload() == other
-    }
-}
-#[rustfmt::skip]
-impl PartialOrd<u64> for ConfigurationGeneration {
-    fn partial_cmp(&self, other: &u64) -> Option<std::cmp::Ordering> {
-        self.payload().partial_cmp(other)
     }
 }
 
@@ -182,9 +202,31 @@ impl From<ConfigurationRejectionReason> for ConfigurationRejected {
 }
 
 #[rustfmt::skip]
+impl AuthorizationApprovalRecorded {
+    pub fn new(payload: AuthorizationEvaluated) -> Self {
+        Self(payload)
+    }
+    pub fn payload(&self) -> &AuthorizationEvaluated {
+        &self.0
+    }
+    pub fn into_payload(self) -> AuthorizationEvaluated {
+        self.0
+    }
+}
+#[rustfmt::skip]
+impl From<AuthorizationEvaluated> for AuthorizationApprovalRecorded {
+    fn from(payload: AuthorizationEvaluated) -> Self {
+        Self::new(payload)
+    }
+}
+
+#[rustfmt::skip]
 impl Input {
     pub fn configure(payload: CriomeDaemonConfiguration) -> Self {
         Self::Configure(payload)
+    }
+    pub fn submit_authorization_approval(payload: AuthorizationApproval) -> Self {
+        Self::SubmitAuthorizationApproval(payload)
     }
 }
 
@@ -192,6 +234,9 @@ impl Input {
 impl Output {
     pub fn configured(payload: ConfigurationGeneration) -> Self {
         Self::Configured(Configured::new(payload))
+    }
+    pub fn authorization_approval_recorded(payload: AuthorizationEvaluated) -> Self {
+        Self::AuthorizationApprovalRecorded(AuthorizationApprovalRecorded::new(payload))
     }
     pub fn configuration_rejected(payload: ConfigurationRejectionReason) -> Self {
         Self::ConfigurationRejected(ConfigurationRejected::new(payload))
@@ -209,9 +254,23 @@ impl From<CriomeDaemonConfiguration> for Input {
 }
 
 #[rustfmt::skip]
+impl From<AuthorizationApproval> for Input {
+    fn from(payload: AuthorizationApproval) -> Self {
+        Self::SubmitAuthorizationApproval(payload)
+    }
+}
+
+#[rustfmt::skip]
 impl From<Configured> for Output {
     fn from(payload: Configured) -> Self {
         Self::Configured(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl From<AuthorizationApprovalRecorded> for Output {
+    fn from(payload: AuthorizationApprovalRecorded) -> Self {
+        Self::AuthorizationApprovalRecorded(payload)
     }
 }
 
@@ -264,9 +323,11 @@ impl std::fmt::Display for Output {
 #[rustfmt::skip]
 pub mod short_header {
     pub const INPUT_CONFIGURE: u64 = 0x0000000000000000;
+    pub const INPUT_SUBMIT_AUTHORIZATION_APPROVAL: u64 = 0x0001000000000000;
     pub const OUTPUT_CONFIGURED: u64 = 0x0100000000000000;
-    pub const OUTPUT_CONFIGURATION_REJECTED: u64 = 0x0101000000000000;
-    pub const OUTPUT_REQUEST_UNIMPLEMENTED: u64 = 0x0102000000000000;
+    pub const OUTPUT_AUTHORIZATION_APPROVAL_RECORDED: u64 = 0x0101000000000000;
+    pub const OUTPUT_CONFIGURATION_REJECTED: u64 = 0x0102000000000000;
+    pub const OUTPUT_REQUEST_UNIMPLEMENTED: u64 = 0x0103000000000000;
 }
 
 #[rustfmt::skip]
@@ -318,6 +379,7 @@ impl std::error::Error for SignalFrameError {}
 )]
 pub enum InputRoute {
     Configure,
+    SubmitAuthorizationApproval,
 }
 
 #[rustfmt::skip]
@@ -334,6 +396,7 @@ pub enum InputRoute {
 )]
 pub enum OutputRoute {
     Configured,
+    AuthorizationApprovalRecorded,
     ConfigurationRejected,
     RequestUnimplemented,
 }
@@ -343,16 +406,25 @@ impl Input {
     pub fn route(&self) -> InputRoute {
         match self {
             Self::Configure(_) => InputRoute::Configure,
+            Self::SubmitAuthorizationApproval(_) => {
+                InputRoute::SubmitAuthorizationApproval
+            }
         }
     }
     pub fn short_header(&self) -> u64 {
         match self {
             Self::Configure(_) => short_header::INPUT_CONFIGURE,
+            Self::SubmitAuthorizationApproval(_) => {
+                short_header::INPUT_SUBMIT_AUTHORIZATION_APPROVAL
+            }
         }
     }
     pub fn route_from_short_header(header: u64) -> Result<InputRoute, SignalFrameError> {
         match header {
             short_header::INPUT_CONFIGURE => Ok(InputRoute::Configure),
+            short_header::INPUT_SUBMIT_AUTHORIZATION_APPROVAL => {
+                Ok(InputRoute::SubmitAuthorizationApproval)
+            }
             _ => {
                 Err(SignalFrameError::UnknownHeader {
                     root_enum: "Input",
@@ -404,6 +476,9 @@ impl Output {
     pub fn route(&self) -> OutputRoute {
         match self {
             Self::Configured(_) => OutputRoute::Configured,
+            Self::AuthorizationApprovalRecorded(_) => {
+                OutputRoute::AuthorizationApprovalRecorded
+            }
             Self::ConfigurationRejected(_) => OutputRoute::ConfigurationRejected,
             Self::RequestUnimplemented(_) => OutputRoute::RequestUnimplemented,
         }
@@ -411,6 +486,9 @@ impl Output {
     pub fn short_header(&self) -> u64 {
         match self {
             Self::Configured(_) => short_header::OUTPUT_CONFIGURED,
+            Self::AuthorizationApprovalRecorded(_) => {
+                short_header::OUTPUT_AUTHORIZATION_APPROVAL_RECORDED
+            }
             Self::ConfigurationRejected(_) => short_header::OUTPUT_CONFIGURATION_REJECTED,
             Self::RequestUnimplemented(_) => short_header::OUTPUT_REQUEST_UNIMPLEMENTED,
         }
@@ -420,6 +498,9 @@ impl Output {
     ) -> Result<OutputRoute, SignalFrameError> {
         match header {
             short_header::OUTPUT_CONFIGURED => Ok(OutputRoute::Configured),
+            short_header::OUTPUT_AUTHORIZATION_APPROVAL_RECORDED => {
+                Ok(OutputRoute::AuthorizationApprovalRecorded)
+            }
             short_header::OUTPUT_CONFIGURATION_REJECTED => {
                 Ok(OutputRoute::ConfigurationRejected)
             }
@@ -476,7 +557,7 @@ impl Output {
 impl signal_frame::RequestPayload for Input {}
 #[rustfmt::skip]
 impl signal_frame::SignalOperationHeads for Input {
-    const HEADS: &'static [&'static str] = &["Configure"];
+    const HEADS: &'static [&'static str] = &["Configure", "SubmitAuthorizationApproval"];
 }
 #[rustfmt::skip]
 impl signal_frame::LogVariant for Input {
