@@ -6,8 +6,20 @@
 ;; Input::Configure
 (Configure (/run/criome/criome.sock /var/lib/criome/criome.sema None None Quorum))
 
+;; Input::ObserveParkedAuthorizations
+(ObserveParkedAuthorizations ())
+
+;; Input::SubmitAuthorizationApproval
+(SubmitAuthorizationApproval (authorization-request-1 Approve))
+
 ;; Output::Configured
 (Configured 7)
+
+;; Output::ParkedAuthorizationSnapshot
+(ParkedAuthorizationSnapshot [(authorization-request-1 (contract-digest-1 (Spirit operation-digest-1 Head) (Spirit operation-digest-1 (((10 20) 1 []) []) [] [])))])
+
+;; Output::AuthorizationApprovalRecorded
+(AuthorizationApprovalRecorded (authorization-request-1 Approve))
 
 ;; Output::ConfigurationRejected
 (ConfigurationRejected ManagerAuthorityRequired)

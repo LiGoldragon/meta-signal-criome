@@ -12,9 +12,11 @@ pub type Path = std::string::String;
 #[rustfmt::skip]
 pub use signal_criome::schema::lib::CriomeDaemonConfiguration as CriomeDaemonConfiguration;
 #[rustfmt::skip]
-pub use signal_criome::schema::lib::AuthorizationEvaluated as AuthorizationEvaluated;
+pub use signal_criome::schema::lib::AuthorizationRequestSlot as AuthorizationRequestSlot;
 #[rustfmt::skip]
-pub use signal_criome::schema::lib::AuthorizationEvaluation as AuthorizationEvaluation;
+pub use signal_criome::schema::lib::ParkedAuthorizationObservation as ParkedAuthorizationObservation;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::ParkedAuthorizationSnapshot as ParkedAuthorizationSnapshot;
 
 #[rustfmt::skip]
 #[cfg(feature = "nota-text")]
@@ -75,14 +77,17 @@ pub enum AuthorizationApprovalDecision {
 #[cfg_attr(feature = "nota-text", derive(nota_next::NotaDecode, nota_next::NotaEncode))]
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct AuthorizationApproval {
-    pub evaluation: AuthorizationEvaluation,
+    pub request_slot: AuthorizationRequestSlot,
     pub decision: AuthorizationApprovalDecision,
 }
 
 #[rustfmt::skip]
 #[cfg_attr(feature = "nota-text", derive(nota_next::NotaDecode, nota_next::NotaEncode))]
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
-pub struct AuthorizationApprovalRecorded(AuthorizationEvaluated);
+pub struct AuthorizationApprovalRecorded {
+    pub request_slot: AuthorizationRequestSlot,
+    pub decision: AuthorizationApprovalDecision,
+}
 
 #[rustfmt::skip]
 #[cfg_attr(feature = "nota-text", derive(nota_next::NotaDecode, nota_next::NotaEncode))]
@@ -98,6 +103,7 @@ pub struct AuthorizationApprovalRecorded(AuthorizationEvaluated);
 )]
 pub enum OperationKind {
     Configure,
+    ObserveParkedAuthorizations,
     SubmitAuthorizationApproval,
 }
 
@@ -131,6 +137,7 @@ pub struct RequestUnimplemented {
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Input {
     Configure(CriomeDaemonConfiguration),
+    ObserveParkedAuthorizations(ParkedAuthorizationObservation),
     SubmitAuthorizationApproval(AuthorizationApproval),
 }
 
@@ -139,6 +146,7 @@ pub enum Input {
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Output {
     Configured(Configured),
+    ParkedAuthorizationSnapshot(ParkedAuthorizationSnapshot),
     AuthorizationApprovalRecorded(AuthorizationApprovalRecorded),
     ConfigurationRejected(ConfigurationRejected),
     RequestUnimplemented(RequestUnimplemented),
@@ -202,28 +210,14 @@ impl From<ConfigurationRejectionReason> for ConfigurationRejected {
 }
 
 #[rustfmt::skip]
-impl AuthorizationApprovalRecorded {
-    pub fn new(payload: AuthorizationEvaluated) -> Self {
-        Self(payload)
-    }
-    pub fn payload(&self) -> &AuthorizationEvaluated {
-        &self.0
-    }
-    pub fn into_payload(self) -> AuthorizationEvaluated {
-        self.0
-    }
-}
-#[rustfmt::skip]
-impl From<AuthorizationEvaluated> for AuthorizationApprovalRecorded {
-    fn from(payload: AuthorizationEvaluated) -> Self {
-        Self::new(payload)
-    }
-}
-
-#[rustfmt::skip]
 impl Input {
     pub fn configure(payload: CriomeDaemonConfiguration) -> Self {
         Self::Configure(payload)
+    }
+    pub fn observe_parked_authorizations(
+        payload: ParkedAuthorizationObservation,
+    ) -> Self {
+        Self::ObserveParkedAuthorizations(payload)
     }
     pub fn submit_authorization_approval(payload: AuthorizationApproval) -> Self {
         Self::SubmitAuthorizationApproval(payload)
@@ -235,8 +229,13 @@ impl Output {
     pub fn configured(payload: ConfigurationGeneration) -> Self {
         Self::Configured(Configured::new(payload))
     }
-    pub fn authorization_approval_recorded(payload: AuthorizationEvaluated) -> Self {
-        Self::AuthorizationApprovalRecorded(AuthorizationApprovalRecorded::new(payload))
+    pub fn parked_authorization_snapshot(payload: ParkedAuthorizationSnapshot) -> Self {
+        Self::ParkedAuthorizationSnapshot(payload)
+    }
+    pub fn authorization_approval_recorded(
+        payload: AuthorizationApprovalRecorded,
+    ) -> Self {
+        Self::AuthorizationApprovalRecorded(payload)
     }
     pub fn configuration_rejected(payload: ConfigurationRejectionReason) -> Self {
         Self::ConfigurationRejected(ConfigurationRejected::new(payload))
@@ -254,6 +253,13 @@ impl From<CriomeDaemonConfiguration> for Input {
 }
 
 #[rustfmt::skip]
+impl From<ParkedAuthorizationObservation> for Input {
+    fn from(payload: ParkedAuthorizationObservation) -> Self {
+        Self::ObserveParkedAuthorizations(payload)
+    }
+}
+
+#[rustfmt::skip]
 impl From<AuthorizationApproval> for Input {
     fn from(payload: AuthorizationApproval) -> Self {
         Self::SubmitAuthorizationApproval(payload)
@@ -264,6 +270,13 @@ impl From<AuthorizationApproval> for Input {
 impl From<Configured> for Output {
     fn from(payload: Configured) -> Self {
         Self::Configured(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl From<ParkedAuthorizationSnapshot> for Output {
+    fn from(payload: ParkedAuthorizationSnapshot) -> Self {
+        Self::ParkedAuthorizationSnapshot(payload)
     }
 }
 
@@ -323,11 +336,13 @@ impl std::fmt::Display for Output {
 #[rustfmt::skip]
 pub mod short_header {
     pub const INPUT_CONFIGURE: u64 = 0x0000000000000000;
-    pub const INPUT_SUBMIT_AUTHORIZATION_APPROVAL: u64 = 0x0001000000000000;
+    pub const INPUT_OBSERVE_PARKED_AUTHORIZATIONS: u64 = 0x0001000000000000;
+    pub const INPUT_SUBMIT_AUTHORIZATION_APPROVAL: u64 = 0x0002000000000000;
     pub const OUTPUT_CONFIGURED: u64 = 0x0100000000000000;
-    pub const OUTPUT_AUTHORIZATION_APPROVAL_RECORDED: u64 = 0x0101000000000000;
-    pub const OUTPUT_CONFIGURATION_REJECTED: u64 = 0x0102000000000000;
-    pub const OUTPUT_REQUEST_UNIMPLEMENTED: u64 = 0x0103000000000000;
+    pub const OUTPUT_PARKED_AUTHORIZATION_SNAPSHOT: u64 = 0x0101000000000000;
+    pub const OUTPUT_AUTHORIZATION_APPROVAL_RECORDED: u64 = 0x0102000000000000;
+    pub const OUTPUT_CONFIGURATION_REJECTED: u64 = 0x0103000000000000;
+    pub const OUTPUT_REQUEST_UNIMPLEMENTED: u64 = 0x0104000000000000;
 }
 
 #[rustfmt::skip]
@@ -379,6 +394,7 @@ impl std::error::Error for SignalFrameError {}
 )]
 pub enum InputRoute {
     Configure,
+    ObserveParkedAuthorizations,
     SubmitAuthorizationApproval,
 }
 
@@ -396,6 +412,7 @@ pub enum InputRoute {
 )]
 pub enum OutputRoute {
     Configured,
+    ParkedAuthorizationSnapshot,
     AuthorizationApprovalRecorded,
     ConfigurationRejected,
     RequestUnimplemented,
@@ -406,6 +423,9 @@ impl Input {
     pub fn route(&self) -> InputRoute {
         match self {
             Self::Configure(_) => InputRoute::Configure,
+            Self::ObserveParkedAuthorizations(_) => {
+                InputRoute::ObserveParkedAuthorizations
+            }
             Self::SubmitAuthorizationApproval(_) => {
                 InputRoute::SubmitAuthorizationApproval
             }
@@ -414,6 +434,9 @@ impl Input {
     pub fn short_header(&self) -> u64 {
         match self {
             Self::Configure(_) => short_header::INPUT_CONFIGURE,
+            Self::ObserveParkedAuthorizations(_) => {
+                short_header::INPUT_OBSERVE_PARKED_AUTHORIZATIONS
+            }
             Self::SubmitAuthorizationApproval(_) => {
                 short_header::INPUT_SUBMIT_AUTHORIZATION_APPROVAL
             }
@@ -422,6 +445,9 @@ impl Input {
     pub fn route_from_short_header(header: u64) -> Result<InputRoute, SignalFrameError> {
         match header {
             short_header::INPUT_CONFIGURE => Ok(InputRoute::Configure),
+            short_header::INPUT_OBSERVE_PARKED_AUTHORIZATIONS => {
+                Ok(InputRoute::ObserveParkedAuthorizations)
+            }
             short_header::INPUT_SUBMIT_AUTHORIZATION_APPROVAL => {
                 Ok(InputRoute::SubmitAuthorizationApproval)
             }
@@ -476,6 +502,9 @@ impl Output {
     pub fn route(&self) -> OutputRoute {
         match self {
             Self::Configured(_) => OutputRoute::Configured,
+            Self::ParkedAuthorizationSnapshot(_) => {
+                OutputRoute::ParkedAuthorizationSnapshot
+            }
             Self::AuthorizationApprovalRecorded(_) => {
                 OutputRoute::AuthorizationApprovalRecorded
             }
@@ -486,6 +515,9 @@ impl Output {
     pub fn short_header(&self) -> u64 {
         match self {
             Self::Configured(_) => short_header::OUTPUT_CONFIGURED,
+            Self::ParkedAuthorizationSnapshot(_) => {
+                short_header::OUTPUT_PARKED_AUTHORIZATION_SNAPSHOT
+            }
             Self::AuthorizationApprovalRecorded(_) => {
                 short_header::OUTPUT_AUTHORIZATION_APPROVAL_RECORDED
             }
@@ -498,6 +530,9 @@ impl Output {
     ) -> Result<OutputRoute, SignalFrameError> {
         match header {
             short_header::OUTPUT_CONFIGURED => Ok(OutputRoute::Configured),
+            short_header::OUTPUT_PARKED_AUTHORIZATION_SNAPSHOT => {
+                Ok(OutputRoute::ParkedAuthorizationSnapshot)
+            }
             short_header::OUTPUT_AUTHORIZATION_APPROVAL_RECORDED => {
                 Ok(OutputRoute::AuthorizationApprovalRecorded)
             }
@@ -557,7 +592,11 @@ impl Output {
 impl signal_frame::RequestPayload for Input {}
 #[rustfmt::skip]
 impl signal_frame::SignalOperationHeads for Input {
-    const HEADS: &'static [&'static str] = &["Configure", "SubmitAuthorizationApproval"];
+    const HEADS: &'static [&'static str] = &[
+        "Configure",
+        "ObserveParkedAuthorizations",
+        "SubmitAuthorizationApproval",
+    ];
 }
 #[rustfmt::skip]
 impl signal_frame::LogVariant for Input {

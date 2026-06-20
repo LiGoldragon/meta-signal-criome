@@ -1,17 +1,18 @@
 //! Round-trip witnesses for the schema-derived criome meta contract.
 
 use meta_signal_criome::{
-    AuthorizationApproval, AuthorizationApprovalDecision, ConfigurationGeneration,
-    ConfigurationRejected, ConfigurationRejectionReason, CriomeDaemonConfiguration, Frame,
-    FrameBody, Input, OperationKind, Output, RequestUnimplemented, UnimplementedReason,
+    AuthorizationApproval, AuthorizationApprovalDecision, AuthorizationApprovalRecorded,
+    ConfigurationGeneration, ConfigurationRejected, ConfigurationRejectionReason,
+    CriomeDaemonConfiguration, Frame, FrameBody, Input, OperationKind, Output,
+    RequestUnimplemented, UnimplementedReason,
 };
 #[cfg(feature = "nota-text")]
 use nota_next::{NotaDecode, NotaEncode, NotaSource};
 use signal_criome::{
-    AttestedMoment, AttestedMomentProposition, AuthorizationEvaluated, AuthorizationEvaluation,
-    AuthorizedObjectKind, AuthorizedObjectReference, ComponentKind, ContractDigest,
-    EvaluationDecision, Evidence, OperationDigest, RequiredSignatureThreshold, TimeWindow,
-    TimestampNanos,
+    AttestedMoment, AttestedMomentProposition, AuthorizationEvaluation, AuthorizationRequestSlot,
+    AuthorizedObjectKind, AuthorizedObjectReference, ComponentKind, ContractDigest, Evidence,
+    OperationDigest, ParkedAuthorization, ParkedAuthorizationObservation,
+    ParkedAuthorizationSnapshot, RequiredSignatureThreshold, TimeWindow, TimestampNanos,
 };
 use signal_frame::{
     ExchangeIdentifier, ExchangeLane, LaneSequence, NonEmpty, Reply, RequestPayload, SessionEpoch,
@@ -57,6 +58,10 @@ fn evaluation() -> AuthorizationEvaluation {
             Vec::new(),
         ),
     }
+}
+
+fn request_slot() -> AuthorizationRequestSlot {
+    AuthorizationRequestSlot::new("authorization-request-1")
 }
 
 fn assert_request_round_trips(request: Input) {
@@ -118,7 +123,7 @@ fn configure_request_carries_the_signal_criome_configuration_type() {
 #[test]
 fn authorization_approval_request_round_trips() {
     let request = Input::SubmitAuthorizationApproval(AuthorizationApproval {
-        evaluation: evaluation(),
+        request_slot: request_slot(),
         decision: AuthorizationApprovalDecision::Approve,
     });
     assert_request_round_trips(request.clone());
@@ -130,9 +135,15 @@ fn authorization_approval_request_round_trips() {
 fn reply_variants_round_trip() {
     let replies = [
         Output::configured(ConfigurationGeneration::new(7)),
-        Output::authorization_approval_recorded(AuthorizationEvaluated {
-            contract: ContractDigest::from_bytes(b"approval-contract"),
-            decision: EvaluationDecision::Authorized,
+        Output::parked_authorization_snapshot(ParkedAuthorizationSnapshot::from_parked(vec![
+            ParkedAuthorization {
+                request_slot: request_slot(),
+                evaluation: evaluation(),
+            },
+        ])),
+        Output::authorization_approval_recorded(AuthorizationApprovalRecorded {
+            request_slot: request_slot(),
+            decision: AuthorizationApprovalDecision::Approve,
         }),
         Output::ConfigurationRejected(ConfigurationRejected::new(
             ConfigurationRejectionReason::ManagerAuthorityRequired,
@@ -147,6 +158,14 @@ fn reply_variants_round_trip() {
         #[cfg(feature = "nota-text")]
         assert_nota_round_trips(&reply);
     }
+}
+
+#[test]
+fn parked_authorization_observation_request_round_trips() {
+    let request = Input::ObserveParkedAuthorizations(ParkedAuthorizationObservation::new());
+    assert_request_round_trips(request.clone());
+    #[cfg(feature = "nota-text")]
+    assert_nota_round_trips(&request);
 }
 
 #[test]

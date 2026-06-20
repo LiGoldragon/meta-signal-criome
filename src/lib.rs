@@ -1,10 +1,9 @@
-//! Schema-derived meta signal contract for privileged `criome` daemon
-//! configuration.
+//! Schema-derived meta signal contract for privileged `criome` daemon control.
 //!
 //! Ordinary criome trust traffic (sign, verify, identity, attestation,
 //! authorization) lives in `signal-criome`. This crate carries the meta plane:
-//! the authenticated `Configure` operation that applies `criome`'s typed
-//! daemon configuration.
+//! authenticated configuration, parked authorization observation, and
+//! approval-by-slot operations.
 
 #[rustfmt::skip]
 pub mod schema;

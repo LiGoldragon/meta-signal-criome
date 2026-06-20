@@ -13,12 +13,15 @@
 
 {
   CriomeDaemonConfiguration signal-criome:lib:CriomeDaemonConfiguration
-  AuthorizationEvaluated signal-criome:lib:AuthorizationEvaluated
-  AuthorizationEvaluation signal-criome:lib:AuthorizationEvaluation
+  AuthorizationRequestSlot signal-criome:lib:AuthorizationRequestSlot
+  ParkedAuthorizationObservation signal-criome:lib:ParkedAuthorizationObservation
+  ParkedAuthorizationSnapshot signal-criome:lib:ParkedAuthorizationSnapshot
 }
 [(Configure CriomeDaemonConfiguration)
+ (ObserveParkedAuthorizations ParkedAuthorizationObservation)
  (SubmitAuthorizationApproval AuthorizationApproval)]
 [(Configured Configured)
+ (ParkedAuthorizationSnapshot ParkedAuthorizationSnapshot)
  (AuthorizationApprovalRecorded AuthorizationApprovalRecorded)
  (ConfigurationRejected ConfigurationRejected)
  (RequestUnimplemented RequestUnimplemented)]
@@ -44,14 +47,15 @@
     Defer
   ]
   AuthorizationApproval {
-    evaluation.AuthorizationEvaluation
+    request_slot.AuthorizationRequestSlot
     decision.AuthorizationApprovalDecision
   }
   AuthorizationApprovalRecorded {
-    evaluated.AuthorizationEvaluated
+    request_slot.AuthorizationRequestSlot
+    decision.AuthorizationApprovalDecision
   }
 
-  OperationKind [Configure SubmitAuthorizationApproval]
+  OperationKind [Configure ObserveParkedAuthorizations SubmitAuthorizationApproval]
   UnimplementedReason [NotBuiltYet DependencyNotReady]
   RequestUnimplemented {
     operation.OperationKind
