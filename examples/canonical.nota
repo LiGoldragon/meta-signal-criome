@@ -4,7 +4,7 @@
 ;; imported rather than duplicated in this contract.
 
 ;; Input::Configure
-(Configure (/run/criome/criome.sock /var/lib/criome/criome.sema None None))
+(Configure (/run/criome/criome.sock /var/lib/criome/criome.sema None None Quorum))
 
 ;; Output::Configured
 (Configured 7)
