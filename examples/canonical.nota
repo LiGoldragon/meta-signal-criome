@@ -16,7 +16,7 @@
 (Configured 7)
 
 ;; Output::ParkedAuthorizationSnapshot
-(ParkedAuthorizationSnapshot [(authorization-request-1 (Some (contract-digest-1 (Spirit operation-digest-1 Head) (Spirit operation-digest-1 (((10 20) 1 []) []) [] []))) None)])
+(ParkedAuthorizationSnapshot [(authorization-request-1 (Some (contract-digest-1 (Spirit operation-digest-1 Head) (Spirit operation-digest-1 (((10 20) 1 []) []) [] [] [] []))) None)])
 
 ;; Output::AuthorizationApprovalRecorded
 (AuthorizationApprovalRecorded (authorization-request-1 Approve))

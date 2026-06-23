@@ -7,7 +7,7 @@ use meta_signal_criome::{
     RequestUnimplemented, UnimplementedReason,
 };
 #[cfg(feature = "nota-text")]
-use nota_next::{NotaDecode, NotaEncode, NotaSource};
+use nota::{NotaDecode, NotaEncode, NotaSource};
 use signal_criome::{
     AttestedMoment, AttestedMomentProposition, AuthorizationEvaluation, AuthorizationRequestSlot,
     AuthorizedObjectKind, AuthorizedObjectReference, ComponentKind, ContractDigest, Evidence,
