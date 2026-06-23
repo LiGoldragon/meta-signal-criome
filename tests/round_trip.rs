@@ -136,10 +136,7 @@ fn reply_variants_round_trip() {
     let replies = [
         Output::configured(ConfigurationGeneration::new(7)),
         Output::parked_authorization_snapshot(ParkedAuthorizationSnapshot::from_parked(vec![
-            ParkedAuthorization {
-                request_slot: request_slot(),
-                evaluation: evaluation(),
-            },
+            ParkedAuthorization::from_evaluation(request_slot(), evaluation()),
         ])),
         Output::authorization_approval_recorded(AuthorizationApprovalRecorded {
             request_slot: request_slot(),

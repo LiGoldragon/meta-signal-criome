@@ -82,10 +82,10 @@ fn canonical_input_examples_round_trip() {
 fn canonical_output_examples_round_trip() {
     round_trip(Output::Configured(ConfigurationGeneration::new(7).into()));
     round_trip(Output::ParkedAuthorizationSnapshot(
-        ParkedAuthorizationSnapshot::from_parked(vec![ParkedAuthorization {
-            request_slot: request_slot(),
-            evaluation: evaluation(),
-        }]),
+        ParkedAuthorizationSnapshot::from_parked(vec![ParkedAuthorization::from_evaluation(
+            request_slot(),
+            evaluation(),
+        )]),
     ));
     round_trip(Output::AuthorizationApprovalRecorded(
         AuthorizationApprovalRecorded {
