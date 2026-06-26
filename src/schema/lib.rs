@@ -17,6 +17,24 @@ pub use signal_criome::schema::lib::AuthorizationRequestSlot as AuthorizationReq
 pub use signal_criome::schema::lib::ParkedAuthorizationObservation as ParkedAuthorizationObservation;
 #[rustfmt::skip]
 pub use signal_criome::schema::lib::ParkedAuthorizationSnapshot as ParkedAuthorizationSnapshot;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::InterceptPolicyIdentifier as InterceptPolicyIdentifier;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::InterceptPolicyProposal as InterceptPolicyProposal;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::InterceptPolicy as InterceptPolicy;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::ActiveInterceptPolicies as ActiveInterceptPolicies;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::InterceptPolicyCancellation as InterceptPolicyCancellation;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::ParkedRequestQuery as ParkedRequestQuery;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::ParkedRequestSnapshot as ParkedRequestSnapshot;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::ParkedRequestAnswer as ParkedRequestAnswer;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::ParkedRequestResolution as ParkedRequestResolution;
 
 #[rustfmt::skip]
 #[cfg(feature = "nota-text")]
@@ -115,6 +133,44 @@ pub struct AuthorizationApprovalRecorded {
     feature = "nota-text",
     derive(nota::NotaDecode, nota::NotaDecodeTraced, nota::NotaEncode)
 )]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct InterceptPolicyObservation {}
+
+#[rustfmt::skip]
+#[cfg_attr(
+    feature = "nota-text",
+    derive(nota::NotaDecode, nota::NotaDecodeTraced, nota::NotaEncode)
+)]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
+pub enum InterceptPolicyChange {
+    Created(InterceptPolicy),
+    Replaced(InterceptPolicy),
+    Cancelled(InterceptPolicyIdentifier),
+}
+
+#[rustfmt::skip]
+#[cfg_attr(
+    feature = "nota-text",
+    derive(nota::NotaDecode, nota::NotaDecodeTraced, nota::NotaEncode)
+)]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct InterceptPolicyStreamToken(String);
+
+#[rustfmt::skip]
+#[cfg_attr(
+    feature = "nota-text",
+    derive(nota::NotaDecode, nota::NotaDecodeTraced, nota::NotaEncode)
+)]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
+pub enum MetaEvent {
+    InterceptPolicyChanged(InterceptPolicyChange),
+}
+
+#[rustfmt::skip]
+#[cfg_attr(
+    feature = "nota-text",
+    derive(nota::NotaDecode, nota::NotaDecodeTraced, nota::NotaEncode)
+)]
 #[derive(
     rkyv::Archive,
     rkyv::Serialize,
@@ -127,6 +183,14 @@ pub struct AuthorizationApprovalRecorded {
 )]
 pub enum OperationKind {
     Configure,
+    CreateInterceptPolicy,
+    ReplaceInterceptPolicy,
+    CancelInterceptPolicy,
+    ListInterceptPolicies,
+    ObserveInterceptPolicies,
+    RetractInterceptPolicyObservation,
+    FetchParkedRequests,
+    AnswerParkedRequest,
     ObserveParkedAuthorizations,
     SubmitAuthorizationApproval,
 }
@@ -170,6 +234,14 @@ pub struct RequestUnimplemented {
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Input {
     Configure(CriomeDaemonConfiguration),
+    CreateInterceptPolicy(InterceptPolicyProposal),
+    ReplaceInterceptPolicy(InterceptPolicyProposal),
+    CancelInterceptPolicy(InterceptPolicyCancellation),
+    ListInterceptPolicies(InterceptPolicyObservation),
+    ObserveInterceptPolicies(InterceptPolicyObservation),
+    RetractInterceptPolicyObservation(InterceptPolicyStreamToken),
+    FetchParkedRequests(ParkedRequestQuery),
+    AnswerParkedRequest(ParkedRequestAnswer),
     ObserveParkedAuthorizations(ParkedAuthorizationObservation),
     SubmitAuthorizationApproval(AuthorizationApproval),
 }
@@ -182,6 +254,14 @@ pub enum Input {
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Output {
     Configured(Configured),
+    InterceptPolicyCreated(InterceptPolicy),
+    InterceptPolicyReplaced(InterceptPolicy),
+    InterceptPolicyCancelled(InterceptPolicyIdentifier),
+    InterceptPoliciesListed(ActiveInterceptPolicies),
+    InterceptPolicyObservationOpened(ActiveInterceptPolicies),
+    InterceptPolicyObservationRetracted(InterceptPolicyStreamToken),
+    ParkedRequestsFetched(ParkedRequestSnapshot),
+    ParkedRequestAnswered(ParkedRequestResolution),
     ParkedAuthorizationSnapshot(ParkedAuthorizationSnapshot),
     AuthorizationApprovalRecorded(AuthorizationApprovalRecorded),
     ConfigurationRejected(ConfigurationRejected),
@@ -246,9 +326,72 @@ impl From<ConfigurationRejectionReason> for ConfigurationRejected {
 }
 
 #[rustfmt::skip]
+impl InterceptPolicyStreamToken {
+    pub fn new(payload: impl Into<String>) -> Self {
+        Self(payload.into())
+    }
+    pub fn payload(&self) -> &String {
+        &self.0
+    }
+    pub fn into_payload(self) -> String {
+        self.0
+    }
+}
+#[rustfmt::skip]
+impl From<String> for InterceptPolicyStreamToken {
+    fn from(payload: String) -> Self {
+        Self::new(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl InterceptPolicyChange {
+    pub fn created(payload: InterceptPolicy) -> Self {
+        Self::Created(payload)
+    }
+    pub fn replaced(payload: InterceptPolicy) -> Self {
+        Self::Replaced(payload)
+    }
+    pub fn cancelled(payload: InterceptPolicyIdentifier) -> Self {
+        Self::Cancelled(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl MetaEvent {
+    pub fn intercept_policy_changed(payload: InterceptPolicyChange) -> Self {
+        Self::InterceptPolicyChanged(payload)
+    }
+}
+
+#[rustfmt::skip]
 impl Input {
     pub fn configure(payload: CriomeDaemonConfiguration) -> Self {
         Self::Configure(payload)
+    }
+    pub fn create_intercept_policy(payload: InterceptPolicyProposal) -> Self {
+        Self::CreateInterceptPolicy(payload)
+    }
+    pub fn replace_intercept_policy(payload: InterceptPolicyProposal) -> Self {
+        Self::ReplaceInterceptPolicy(payload)
+    }
+    pub fn cancel_intercept_policy(payload: InterceptPolicyCancellation) -> Self {
+        Self::CancelInterceptPolicy(payload)
+    }
+    pub fn list_intercept_policies(payload: InterceptPolicyObservation) -> Self {
+        Self::ListInterceptPolicies(payload)
+    }
+    pub fn observe_intercept_policies(payload: InterceptPolicyObservation) -> Self {
+        Self::ObserveInterceptPolicies(payload)
+    }
+    pub fn retract_intercept_policy_observation(payload: String) -> Self {
+        Self::RetractInterceptPolicyObservation(InterceptPolicyStreamToken::new(payload))
+    }
+    pub fn fetch_parked_requests(payload: ParkedRequestQuery) -> Self {
+        Self::FetchParkedRequests(payload)
+    }
+    pub fn answer_parked_request(payload: ParkedRequestAnswer) -> Self {
+        Self::AnswerParkedRequest(payload)
     }
     pub fn observe_parked_authorizations(
         payload: ParkedAuthorizationObservation,
@@ -264,6 +407,34 @@ impl Input {
 impl Output {
     pub fn configured(payload: ConfigurationGeneration) -> Self {
         Self::Configured(Configured::new(payload))
+    }
+    pub fn intercept_policy_created(payload: InterceptPolicy) -> Self {
+        Self::InterceptPolicyCreated(payload)
+    }
+    pub fn intercept_policy_replaced(payload: InterceptPolicy) -> Self {
+        Self::InterceptPolicyReplaced(payload)
+    }
+    pub fn intercept_policy_cancelled(payload: InterceptPolicyIdentifier) -> Self {
+        Self::InterceptPolicyCancelled(payload)
+    }
+    pub fn intercept_policies_listed(payload: ActiveInterceptPolicies) -> Self {
+        Self::InterceptPoliciesListed(payload)
+    }
+    pub fn intercept_policy_observation_opened(
+        payload: ActiveInterceptPolicies,
+    ) -> Self {
+        Self::InterceptPolicyObservationOpened(payload)
+    }
+    pub fn intercept_policy_observation_retracted(payload: String) -> Self {
+        Self::InterceptPolicyObservationRetracted(
+            InterceptPolicyStreamToken::new(payload),
+        )
+    }
+    pub fn parked_requests_fetched(payload: ParkedRequestSnapshot) -> Self {
+        Self::ParkedRequestsFetched(payload)
+    }
+    pub fn parked_request_answered(payload: ParkedRequestResolution) -> Self {
+        Self::ParkedRequestAnswered(payload)
     }
     pub fn parked_authorization_snapshot(payload: ParkedAuthorizationSnapshot) -> Self {
         Self::ParkedAuthorizationSnapshot(payload)
@@ -282,9 +453,51 @@ impl Output {
 }
 
 #[rustfmt::skip]
+impl From<InterceptPolicyIdentifier> for InterceptPolicyChange {
+    fn from(payload: InterceptPolicyIdentifier) -> Self {
+        Self::Cancelled(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl From<InterceptPolicyChange> for MetaEvent {
+    fn from(payload: InterceptPolicyChange) -> Self {
+        Self::InterceptPolicyChanged(payload)
+    }
+}
+
+#[rustfmt::skip]
 impl From<CriomeDaemonConfiguration> for Input {
     fn from(payload: CriomeDaemonConfiguration) -> Self {
         Self::Configure(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl From<InterceptPolicyCancellation> for Input {
+    fn from(payload: InterceptPolicyCancellation) -> Self {
+        Self::CancelInterceptPolicy(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl From<InterceptPolicyStreamToken> for Input {
+    fn from(payload: InterceptPolicyStreamToken) -> Self {
+        Self::RetractInterceptPolicyObservation(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl From<ParkedRequestQuery> for Input {
+    fn from(payload: ParkedRequestQuery) -> Self {
+        Self::FetchParkedRequests(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl From<ParkedRequestAnswer> for Input {
+    fn from(payload: ParkedRequestAnswer) -> Self {
+        Self::AnswerParkedRequest(payload)
     }
 }
 
@@ -306,6 +519,34 @@ impl From<AuthorizationApproval> for Input {
 impl From<Configured> for Output {
     fn from(payload: Configured) -> Self {
         Self::Configured(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl From<InterceptPolicyIdentifier> for Output {
+    fn from(payload: InterceptPolicyIdentifier) -> Self {
+        Self::InterceptPolicyCancelled(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl From<InterceptPolicyStreamToken> for Output {
+    fn from(payload: InterceptPolicyStreamToken) -> Self {
+        Self::InterceptPolicyObservationRetracted(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl From<ParkedRequestSnapshot> for Output {
+    fn from(payload: ParkedRequestSnapshot) -> Self {
+        Self::ParkedRequestsFetched(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl From<ParkedRequestResolution> for Output {
+    fn from(payload: ParkedRequestResolution) -> Self {
+        Self::ParkedRequestAnswered(payload)
     }
 }
 
@@ -372,13 +613,29 @@ impl std::fmt::Display for Output {
 #[rustfmt::skip]
 pub mod short_header {
     pub const INPUT_CONFIGURE: u64 = 0x0000000000000000;
-    pub const INPUT_OBSERVE_PARKED_AUTHORIZATIONS: u64 = 0x0001000000000000;
-    pub const INPUT_SUBMIT_AUTHORIZATION_APPROVAL: u64 = 0x0002000000000000;
+    pub const INPUT_CREATE_INTERCEPT_POLICY: u64 = 0x0001000000000000;
+    pub const INPUT_REPLACE_INTERCEPT_POLICY: u64 = 0x0002000000000000;
+    pub const INPUT_CANCEL_INTERCEPT_POLICY: u64 = 0x0003000000000000;
+    pub const INPUT_LIST_INTERCEPT_POLICIES: u64 = 0x0004000000000000;
+    pub const INPUT_OBSERVE_INTERCEPT_POLICIES: u64 = 0x0005000000000000;
+    pub const INPUT_RETRACT_INTERCEPT_POLICY_OBSERVATION: u64 = 0x0006000000000000;
+    pub const INPUT_FETCH_PARKED_REQUESTS: u64 = 0x0007000000000000;
+    pub const INPUT_ANSWER_PARKED_REQUEST: u64 = 0x0008000000000000;
+    pub const INPUT_OBSERVE_PARKED_AUTHORIZATIONS: u64 = 0x0009000000000000;
+    pub const INPUT_SUBMIT_AUTHORIZATION_APPROVAL: u64 = 0x000A000000000000;
     pub const OUTPUT_CONFIGURED: u64 = 0x0100000000000000;
-    pub const OUTPUT_PARKED_AUTHORIZATION_SNAPSHOT: u64 = 0x0101000000000000;
-    pub const OUTPUT_AUTHORIZATION_APPROVAL_RECORDED: u64 = 0x0102000000000000;
-    pub const OUTPUT_CONFIGURATION_REJECTED: u64 = 0x0103000000000000;
-    pub const OUTPUT_REQUEST_UNIMPLEMENTED: u64 = 0x0104000000000000;
+    pub const OUTPUT_INTERCEPT_POLICY_CREATED: u64 = 0x0101000000000000;
+    pub const OUTPUT_INTERCEPT_POLICY_REPLACED: u64 = 0x0102000000000000;
+    pub const OUTPUT_INTERCEPT_POLICY_CANCELLED: u64 = 0x0103000000000000;
+    pub const OUTPUT_INTERCEPT_POLICIES_LISTED: u64 = 0x0104000000000000;
+    pub const OUTPUT_INTERCEPT_POLICY_OBSERVATION_OPENED: u64 = 0x0105000000000000;
+    pub const OUTPUT_INTERCEPT_POLICY_OBSERVATION_RETRACTED: u64 = 0x0106000000000000;
+    pub const OUTPUT_PARKED_REQUESTS_FETCHED: u64 = 0x0107000000000000;
+    pub const OUTPUT_PARKED_REQUEST_ANSWERED: u64 = 0x0108000000000000;
+    pub const OUTPUT_PARKED_AUTHORIZATION_SNAPSHOT: u64 = 0x0109000000000000;
+    pub const OUTPUT_AUTHORIZATION_APPROVAL_RECORDED: u64 = 0x010A000000000000;
+    pub const OUTPUT_CONFIGURATION_REJECTED: u64 = 0x010B000000000000;
+    pub const OUTPUT_REQUEST_UNIMPLEMENTED: u64 = 0x010C000000000000;
 }
 
 #[rustfmt::skip]
@@ -433,6 +690,14 @@ impl std::error::Error for SignalFrameError {}
 )]
 pub enum InputRoute {
     Configure,
+    CreateInterceptPolicy,
+    ReplaceInterceptPolicy,
+    CancelInterceptPolicy,
+    ListInterceptPolicies,
+    ObserveInterceptPolicies,
+    RetractInterceptPolicyObservation,
+    FetchParkedRequests,
+    AnswerParkedRequest,
     ObserveParkedAuthorizations,
     SubmitAuthorizationApproval,
 }
@@ -454,6 +719,14 @@ pub enum InputRoute {
 )]
 pub enum OutputRoute {
     Configured,
+    InterceptPolicyCreated,
+    InterceptPolicyReplaced,
+    InterceptPolicyCancelled,
+    InterceptPoliciesListed,
+    InterceptPolicyObservationOpened,
+    InterceptPolicyObservationRetracted,
+    ParkedRequestsFetched,
+    ParkedRequestAnswered,
     ParkedAuthorizationSnapshot,
     AuthorizationApprovalRecorded,
     ConfigurationRejected,
@@ -465,6 +738,16 @@ impl Input {
     pub fn route(&self) -> InputRoute {
         match self {
             Self::Configure(_) => InputRoute::Configure,
+            Self::CreateInterceptPolicy(_) => InputRoute::CreateInterceptPolicy,
+            Self::ReplaceInterceptPolicy(_) => InputRoute::ReplaceInterceptPolicy,
+            Self::CancelInterceptPolicy(_) => InputRoute::CancelInterceptPolicy,
+            Self::ListInterceptPolicies(_) => InputRoute::ListInterceptPolicies,
+            Self::ObserveInterceptPolicies(_) => InputRoute::ObserveInterceptPolicies,
+            Self::RetractInterceptPolicyObservation(_) => {
+                InputRoute::RetractInterceptPolicyObservation
+            }
+            Self::FetchParkedRequests(_) => InputRoute::FetchParkedRequests,
+            Self::AnswerParkedRequest(_) => InputRoute::AnswerParkedRequest,
             Self::ObserveParkedAuthorizations(_) => {
                 InputRoute::ObserveParkedAuthorizations
             }
@@ -476,6 +759,20 @@ impl Input {
     pub fn short_header(&self) -> u64 {
         match self {
             Self::Configure(_) => short_header::INPUT_CONFIGURE,
+            Self::CreateInterceptPolicy(_) => short_header::INPUT_CREATE_INTERCEPT_POLICY,
+            Self::ReplaceInterceptPolicy(_) => {
+                short_header::INPUT_REPLACE_INTERCEPT_POLICY
+            }
+            Self::CancelInterceptPolicy(_) => short_header::INPUT_CANCEL_INTERCEPT_POLICY,
+            Self::ListInterceptPolicies(_) => short_header::INPUT_LIST_INTERCEPT_POLICIES,
+            Self::ObserveInterceptPolicies(_) => {
+                short_header::INPUT_OBSERVE_INTERCEPT_POLICIES
+            }
+            Self::RetractInterceptPolicyObservation(_) => {
+                short_header::INPUT_RETRACT_INTERCEPT_POLICY_OBSERVATION
+            }
+            Self::FetchParkedRequests(_) => short_header::INPUT_FETCH_PARKED_REQUESTS,
+            Self::AnswerParkedRequest(_) => short_header::INPUT_ANSWER_PARKED_REQUEST,
             Self::ObserveParkedAuthorizations(_) => {
                 short_header::INPUT_OBSERVE_PARKED_AUTHORIZATIONS
             }
@@ -487,6 +784,30 @@ impl Input {
     pub fn route_from_short_header(header: u64) -> Result<InputRoute, SignalFrameError> {
         match header {
             short_header::INPUT_CONFIGURE => Ok(InputRoute::Configure),
+            short_header::INPUT_CREATE_INTERCEPT_POLICY => {
+                Ok(InputRoute::CreateInterceptPolicy)
+            }
+            short_header::INPUT_REPLACE_INTERCEPT_POLICY => {
+                Ok(InputRoute::ReplaceInterceptPolicy)
+            }
+            short_header::INPUT_CANCEL_INTERCEPT_POLICY => {
+                Ok(InputRoute::CancelInterceptPolicy)
+            }
+            short_header::INPUT_LIST_INTERCEPT_POLICIES => {
+                Ok(InputRoute::ListInterceptPolicies)
+            }
+            short_header::INPUT_OBSERVE_INTERCEPT_POLICIES => {
+                Ok(InputRoute::ObserveInterceptPolicies)
+            }
+            short_header::INPUT_RETRACT_INTERCEPT_POLICY_OBSERVATION => {
+                Ok(InputRoute::RetractInterceptPolicyObservation)
+            }
+            short_header::INPUT_FETCH_PARKED_REQUESTS => {
+                Ok(InputRoute::FetchParkedRequests)
+            }
+            short_header::INPUT_ANSWER_PARKED_REQUEST => {
+                Ok(InputRoute::AnswerParkedRequest)
+            }
             short_header::INPUT_OBSERVE_PARKED_AUTHORIZATIONS => {
                 Ok(InputRoute::ObserveParkedAuthorizations)
             }
@@ -544,6 +865,18 @@ impl Output {
     pub fn route(&self) -> OutputRoute {
         match self {
             Self::Configured(_) => OutputRoute::Configured,
+            Self::InterceptPolicyCreated(_) => OutputRoute::InterceptPolicyCreated,
+            Self::InterceptPolicyReplaced(_) => OutputRoute::InterceptPolicyReplaced,
+            Self::InterceptPolicyCancelled(_) => OutputRoute::InterceptPolicyCancelled,
+            Self::InterceptPoliciesListed(_) => OutputRoute::InterceptPoliciesListed,
+            Self::InterceptPolicyObservationOpened(_) => {
+                OutputRoute::InterceptPolicyObservationOpened
+            }
+            Self::InterceptPolicyObservationRetracted(_) => {
+                OutputRoute::InterceptPolicyObservationRetracted
+            }
+            Self::ParkedRequestsFetched(_) => OutputRoute::ParkedRequestsFetched,
+            Self::ParkedRequestAnswered(_) => OutputRoute::ParkedRequestAnswered,
             Self::ParkedAuthorizationSnapshot(_) => {
                 OutputRoute::ParkedAuthorizationSnapshot
             }
@@ -557,6 +890,30 @@ impl Output {
     pub fn short_header(&self) -> u64 {
         match self {
             Self::Configured(_) => short_header::OUTPUT_CONFIGURED,
+            Self::InterceptPolicyCreated(_) => {
+                short_header::OUTPUT_INTERCEPT_POLICY_CREATED
+            }
+            Self::InterceptPolicyReplaced(_) => {
+                short_header::OUTPUT_INTERCEPT_POLICY_REPLACED
+            }
+            Self::InterceptPolicyCancelled(_) => {
+                short_header::OUTPUT_INTERCEPT_POLICY_CANCELLED
+            }
+            Self::InterceptPoliciesListed(_) => {
+                short_header::OUTPUT_INTERCEPT_POLICIES_LISTED
+            }
+            Self::InterceptPolicyObservationOpened(_) => {
+                short_header::OUTPUT_INTERCEPT_POLICY_OBSERVATION_OPENED
+            }
+            Self::InterceptPolicyObservationRetracted(_) => {
+                short_header::OUTPUT_INTERCEPT_POLICY_OBSERVATION_RETRACTED
+            }
+            Self::ParkedRequestsFetched(_) => {
+                short_header::OUTPUT_PARKED_REQUESTS_FETCHED
+            }
+            Self::ParkedRequestAnswered(_) => {
+                short_header::OUTPUT_PARKED_REQUEST_ANSWERED
+            }
             Self::ParkedAuthorizationSnapshot(_) => {
                 short_header::OUTPUT_PARKED_AUTHORIZATION_SNAPSHOT
             }
@@ -572,6 +929,30 @@ impl Output {
     ) -> Result<OutputRoute, SignalFrameError> {
         match header {
             short_header::OUTPUT_CONFIGURED => Ok(OutputRoute::Configured),
+            short_header::OUTPUT_INTERCEPT_POLICY_CREATED => {
+                Ok(OutputRoute::InterceptPolicyCreated)
+            }
+            short_header::OUTPUT_INTERCEPT_POLICY_REPLACED => {
+                Ok(OutputRoute::InterceptPolicyReplaced)
+            }
+            short_header::OUTPUT_INTERCEPT_POLICY_CANCELLED => {
+                Ok(OutputRoute::InterceptPolicyCancelled)
+            }
+            short_header::OUTPUT_INTERCEPT_POLICIES_LISTED => {
+                Ok(OutputRoute::InterceptPoliciesListed)
+            }
+            short_header::OUTPUT_INTERCEPT_POLICY_OBSERVATION_OPENED => {
+                Ok(OutputRoute::InterceptPolicyObservationOpened)
+            }
+            short_header::OUTPUT_INTERCEPT_POLICY_OBSERVATION_RETRACTED => {
+                Ok(OutputRoute::InterceptPolicyObservationRetracted)
+            }
+            short_header::OUTPUT_PARKED_REQUESTS_FETCHED => {
+                Ok(OutputRoute::ParkedRequestsFetched)
+            }
+            short_header::OUTPUT_PARKED_REQUEST_ANSWERED => {
+                Ok(OutputRoute::ParkedRequestAnswered)
+            }
             short_header::OUTPUT_PARKED_AUTHORIZATION_SNAPSHOT => {
                 Ok(OutputRoute::ParkedAuthorizationSnapshot)
             }
@@ -636,6 +1017,14 @@ impl signal_frame::RequestPayload for Input {}
 impl signal_frame::SignalOperationHeads for Input {
     const HEADS: &'static [&'static str] = &[
         "Configure",
+        "CreateInterceptPolicy",
+        "ReplaceInterceptPolicy",
+        "CancelInterceptPolicy",
+        "ListInterceptPolicies",
+        "ObserveInterceptPolicies",
+        "RetractInterceptPolicyObservation",
+        "FetchParkedRequests",
+        "AnswerParkedRequest",
         "ObserveParkedAuthorizations",
         "SubmitAuthorizationApproval",
     ];

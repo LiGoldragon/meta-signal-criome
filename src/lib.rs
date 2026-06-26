@@ -15,3 +15,21 @@ impl ConfigurationGeneration {
         *self.payload()
     }
 }
+
+impl InterceptPolicyObservation {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Default for InterceptPolicyObservation {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl InterceptPolicyStreamToken {
+    pub fn as_str(&self) -> &str {
+        self.payload().as_str()
+    }
+}

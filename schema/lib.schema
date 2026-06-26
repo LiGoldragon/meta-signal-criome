@@ -16,11 +16,36 @@
   AuthorizationRequestSlot signal-criome:lib:AuthorizationRequestSlot
   ParkedAuthorizationObservation signal-criome:lib:ParkedAuthorizationObservation
   ParkedAuthorizationSnapshot signal-criome:lib:ParkedAuthorizationSnapshot
+  InterceptPolicyIdentifier signal-criome:lib:InterceptPolicyIdentifier
+  InterceptPolicyProposal signal-criome:lib:InterceptPolicyProposal
+  InterceptPolicy signal-criome:lib:InterceptPolicy
+  ActiveInterceptPolicies signal-criome:lib:ActiveInterceptPolicies
+  InterceptPolicyCancellation signal-criome:lib:InterceptPolicyCancellation
+  ParkedRequestQuery signal-criome:lib:ParkedRequestQuery
+  ParkedRequestSnapshot signal-criome:lib:ParkedRequestSnapshot
+  ParkedRequestAnswer signal-criome:lib:ParkedRequestAnswer
+  ParkedRequestResolution signal-criome:lib:ParkedRequestResolution
 }
 [(Configure CriomeDaemonConfiguration)
+ (CreateInterceptPolicy InterceptPolicyProposal)
+ (ReplaceInterceptPolicy InterceptPolicyProposal)
+ (CancelInterceptPolicy InterceptPolicyCancellation)
+ (ListInterceptPolicies InterceptPolicyObservation)
+ (ObserveInterceptPolicies InterceptPolicyObservation opens InterceptPolicyStream)
+ (RetractInterceptPolicyObservation InterceptPolicyStreamToken)
+ (FetchParkedRequests ParkedRequestQuery)
+ (AnswerParkedRequest ParkedRequestAnswer)
  (ObserveParkedAuthorizations ParkedAuthorizationObservation)
  (SubmitAuthorizationApproval AuthorizationApproval)]
 [(Configured Configured)
+ (InterceptPolicyCreated InterceptPolicy)
+ (InterceptPolicyReplaced InterceptPolicy)
+ (InterceptPolicyCancelled InterceptPolicyIdentifier)
+ (InterceptPoliciesListed ActiveInterceptPolicies)
+ (InterceptPolicyObservationOpened ActiveInterceptPolicies)
+ (InterceptPolicyObservationRetracted InterceptPolicyStreamToken)
+ (ParkedRequestsFetched ParkedRequestSnapshot)
+ (ParkedRequestAnswered ParkedRequestResolution)
  (ParkedAuthorizationSnapshot ParkedAuthorizationSnapshot)
  (AuthorizationApprovalRecorded AuthorizationApprovalRecorded)
  (ConfigurationRejected ConfigurationRejected)
@@ -55,7 +80,33 @@
     decision.AuthorizationApprovalDecision
   }
 
-  OperationKind [Configure ObserveParkedAuthorizations SubmitAuthorizationApproval]
+  InterceptPolicyObservation { }
+
+  InterceptPolicyChange [
+    (Created InterceptPolicy)
+    (Replaced InterceptPolicy)
+    (Cancelled InterceptPolicyIdentifier)
+  ]
+
+  InterceptPolicyStreamToken String
+  MetaEvent [
+    (InterceptPolicyChanged InterceptPolicyChange belongs InterceptPolicyStream)
+  ]
+  InterceptPolicyStream (Stream { token.InterceptPolicyStreamToken opened.ActiveInterceptPolicies event.MetaEvent close.InterceptPolicyStreamToken })
+
+  OperationKind [
+    Configure
+    CreateInterceptPolicy
+    ReplaceInterceptPolicy
+    CancelInterceptPolicy
+    ListInterceptPolicies
+    ObserveInterceptPolicies
+    RetractInterceptPolicyObservation
+    FetchParkedRequests
+    AnswerParkedRequest
+    ObserveParkedAuthorizations
+    SubmitAuthorizationApproval
+  ]
   UnimplementedReason [NotBuiltYet DependencyNotReady]
   RequestUnimplemented {
     operation.OperationKind

@@ -15,6 +15,12 @@ daemon decodes from its binary startup file.
 
 - Meta authority wire vocabulary for criome.
 - The `Configure(CriomeDaemonConfiguration)` operation.
+- Intercept-policy owner operations:
+  `CreateInterceptPolicy`, `ReplaceInterceptPolicy`, `CancelInterceptPolicy`,
+  `ListInterceptPolicies`, `ObserveInterceptPolicies`, and
+  `RetractInterceptPolicyObservation`.
+- Parked Spirit request control operations:
+  `FetchParkedRequests` and `AnswerParkedRequest`.
 - Configuration replies: `Configured`, `ConfigurationRejected`, and
   `RequestUnimplemented`.
 - Optional NOTA projection behind the `nota-text` feature.
@@ -23,6 +29,9 @@ daemon decodes from its binary startup file.
 
 - Ordinary criome trust traffic: sign, verify, identity, attestation, and
   authorization operations live in `signal-criome`.
+- The shared intercept-policy and parked-request records live in
+  `signal-criome`; this contract imports them and exposes the owner/meta
+  authority verbs.
 - Criome daemon state, sockets, actors, and storage live in `criome`.
 - Schema generation machinery lives in `schema-next` / `schema-rust-next`.
 
@@ -44,5 +53,7 @@ daemon decodes from its binary startup file.
 - Default builds are NOTA-free.
 - The meta contract reuses `signal_criome::CriomeDaemonConfiguration`; it does
   not mirror the daemon configuration record.
+- The meta contract reuses `signal_criome` intercept-policy and parked-request
+  records; criome remains the policy-state owner.
 - The implementation is schema-derived `WireContract`; no handwritten
   `signal_frame::signal_channel!` remains.

@@ -3,16 +3,24 @@
 use meta_signal_criome::{
     AuthorizationApproval, AuthorizationApprovalDecision, AuthorizationApprovalRecorded,
     ConfigurationGeneration, ConfigurationRejected, ConfigurationRejectionReason,
-    CriomeDaemonConfiguration, Frame, FrameBody, Input, OperationKind, Output,
-    RequestUnimplemented, UnimplementedReason,
+    CriomeDaemonConfiguration, Frame, FrameBody, Input, InterceptPolicyObservation,
+    InterceptPolicyStreamToken, OperationKind, Output, RequestUnimplemented, UnimplementedReason,
 };
 #[cfg(feature = "nota-text")]
 use nota::{NotaDecode, NotaEncode, NotaSource};
 use signal_criome::{
-    AttestedMoment, AttestedMomentProposition, AuthorizationEvaluation, AuthorizationRequestSlot,
-    AuthorizedObjectKind, AuthorizedObjectReference, ComponentKind, ContractDigest, Evidence,
+    ActiveInterceptPolicies, ApprovalAuditSource, AttestedMoment, AttestedMomentProposition,
+    AuthorizationEvaluation, AuthorizationRequestSlot, AuthorizedObjectKind,
+    AuthorizedObjectReference, ComponentKind, ContractDigest, Evidence, ExpiryAction,
+    InterceptPolicy, InterceptPolicyCancellation, InterceptPolicyIdentifier,
+    InterceptPolicyProposal, InterceptPolicyWindow, InterceptTargetSelector, MentciSessionSlot,
     OperationDigest, ParkedAuthorization, ParkedAuthorizationObservation,
-    ParkedAuthorizationSnapshot, RequiredSignatureThreshold, TimeWindow, TimestampNanos,
+    ParkedAuthorizationSnapshot, ParkedRequestAnswer, ParkedRequestDecision,
+    ParkedRequestIdentifier, ParkedRequestOutcome, ParkedRequestQuery, ParkedRequestResolution,
+    ParkedRequestSnapshot, ParkedSpiritRequest, PolicyDurationNanos, PolicyOverlapMode,
+    PolicyPriority, RawSpiritOperationPayload, RequiredSignatureThreshold,
+    SpiritAuthorizationContext, SpiritOperationName, SpiritOperationNames, SpiritProcessKey,
+    TimeWindow, TimestampNanos,
 };
 use signal_frame::{
     ExchangeIdentifier, ExchangeLane, LaneSequence, NonEmpty, Reply, RequestPayload, SessionEpoch,
@@ -62,6 +70,104 @@ fn evaluation() -> AuthorizationEvaluation {
 
 fn request_slot() -> AuthorizationRequestSlot {
     AuthorizationRequestSlot::new("authorization-request-1")
+}
+
+fn mentci_session_slot() -> MentciSessionSlot {
+    MentciSessionSlot::new("mentci-session-1")
+}
+
+fn intercept_policy_identifier() -> InterceptPolicyIdentifier {
+    InterceptPolicyIdentifier::new("intercept-policy-1")
+}
+
+fn spirit_process_key() -> SpiritProcessKey {
+    SpiritProcessKey::new("spirit-process-main")
+}
+
+fn intercept_target() -> InterceptTargetSelector {
+    InterceptTargetSelector::new(spirit_process_key())
+}
+
+fn spirit_operation_names() -> SpiritOperationNames {
+    SpiritOperationNames::from_names(vec![
+        SpiritOperationName::new("Record"),
+        SpiritOperationName::new("ChangeRecord"),
+    ])
+}
+
+fn intercept_policy_proposal() -> InterceptPolicyProposal {
+    InterceptPolicyProposal {
+        session_slot: mentci_session_slot(),
+        target: intercept_target(),
+        spirit_operation_names: spirit_operation_names(),
+        duration: PolicyDurationNanos::new(100),
+        expiry_action: ExpiryAction::AutoApprove,
+        priority: PolicyPriority::new(50),
+        overlap_mode: PolicyOverlapMode::RejectSamePriorityOverlap,
+    }
+}
+
+fn intercept_policy() -> InterceptPolicy {
+    InterceptPolicy {
+        identifier: intercept_policy_identifier(),
+        session_slot: mentci_session_slot(),
+        target: intercept_target(),
+        spirit_operation_names: spirit_operation_names(),
+        window: InterceptPolicyWindow {
+            starts_at: TimestampNanos::new(100),
+            expires_at: TimestampNanos::new(200),
+        },
+        expiry_action: ExpiryAction::AutoApprove,
+        priority: PolicyPriority::new(50),
+    }
+}
+
+fn active_intercept_policies() -> ActiveInterceptPolicies {
+    ActiveInterceptPolicies::from_policies(vec![intercept_policy()])
+}
+
+fn parked_request_query() -> ParkedRequestQuery {
+    ParkedRequestQuery {
+        session_slot: Some(mentci_session_slot()),
+        target: Some(intercept_target()),
+    }
+}
+
+fn parked_request_answer() -> ParkedRequestAnswer {
+    ParkedRequestAnswer {
+        identifier: ParkedRequestIdentifier::new("parked-request-1"),
+        decision: ParkedRequestDecision::Approve,
+    }
+}
+
+fn parked_spirit_request() -> ParkedSpiritRequest {
+    ParkedSpiritRequest {
+        identifier: ParkedRequestIdentifier::new("parked-request-1"),
+        matched_policy: intercept_policy_identifier(),
+        session_slot: mentci_session_slot(),
+        context: SpiritAuthorizationContext {
+            operation_name: SpiritOperationName::new("Record"),
+            raw_payload: RawSpiritOperationPayload::new("(Record (...))"),
+            target_key: spirit_process_key(),
+        },
+        parked_at: TimestampNanos::new(120),
+        expires_at: TimestampNanos::new(200),
+        expiry_action: ExpiryAction::AutoApprove,
+    }
+}
+
+fn parked_request_snapshot() -> ParkedRequestSnapshot {
+    ParkedRequestSnapshot::from_requests(vec![parked_spirit_request()])
+}
+
+fn parked_request_resolution() -> ParkedRequestResolution {
+    ParkedRequestResolution {
+        identifier: ParkedRequestIdentifier::new("parked-request-1"),
+        matched_policy: intercept_policy_identifier(),
+        outcome: ParkedRequestOutcome::Approved,
+        audit_source: ApprovalAuditSource::Manual,
+        resolved_at: TimestampNanos::new(130),
+    }
 }
 
 fn assert_request_round_trips(request: Input) {
@@ -132,9 +238,43 @@ fn authorization_approval_request_round_trips() {
 }
 
 #[test]
+fn intercept_policy_owner_requests_round_trip() {
+    let requests = [
+        Input::CreateInterceptPolicy(intercept_policy_proposal()),
+        Input::ReplaceInterceptPolicy(intercept_policy_proposal()),
+        Input::CancelInterceptPolicy(InterceptPolicyCancellation::new(
+            intercept_policy_identifier(),
+        )),
+        Input::ListInterceptPolicies(InterceptPolicyObservation::new()),
+        Input::ObserveInterceptPolicies(InterceptPolicyObservation::new()),
+        Input::RetractInterceptPolicyObservation(InterceptPolicyStreamToken::new(
+            "intercept-policy-stream-1",
+        )),
+        Input::FetchParkedRequests(parked_request_query()),
+        Input::AnswerParkedRequest(parked_request_answer()),
+    ];
+
+    for request in requests {
+        assert_request_round_trips(request.clone());
+        #[cfg(feature = "nota-text")]
+        assert_nota_round_trips(&request);
+    }
+}
+
+#[test]
 fn reply_variants_round_trip() {
     let replies = [
         Output::configured(ConfigurationGeneration::new(7)),
+        Output::InterceptPolicyCreated(intercept_policy()),
+        Output::InterceptPolicyReplaced(intercept_policy()),
+        Output::InterceptPolicyCancelled(intercept_policy_identifier()),
+        Output::InterceptPoliciesListed(active_intercept_policies()),
+        Output::InterceptPolicyObservationOpened(active_intercept_policies()),
+        Output::InterceptPolicyObservationRetracted(InterceptPolicyStreamToken::new(
+            "intercept-policy-stream-1",
+        )),
+        Output::ParkedRequestsFetched(parked_request_snapshot()),
+        Output::ParkedRequestAnswered(parked_request_resolution()),
         Output::parked_authorization_snapshot(ParkedAuthorizationSnapshot::from_parked(vec![
             ParkedAuthorization::from_evaluation(request_slot(), evaluation()),
         ])),
