@@ -605,8 +605,8 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "signal-criome"
-version = "0.4.0"
-source = "git+https://github.com/LiGoldragon/signal-criome.git?branch=main#cb9d72f6f9a511ca6f5d540ea6ba5a881f5d0ac1"
+version = "0.6.0"
+source = "git+https://github.com/LiGoldragon/signal-criome.git?branch=criome-auth-integration#5976b2870e0231742dc1a8bf4db17fd98f8f6b61"
 dependencies = [
  "blake3",
  "blst",
@@ -619,8 +619,8 @@ dependencies = [
 
 [[package]]
 name = "signal-frame"
-version = "0.2.1"
-source = "git+https://github.com/LiGoldragon/signal-frame.git?branch=main#d0dd5c0b66a90c1af72d45920e31c2b3049437f9"
+version = "0.3.0"
+source = "git+https://github.com/LiGoldragon/signal-frame.git?branch=main#b78c80775c7fb7f80dee7ea3a8a30cc14dfac442"
 dependencies = [
  "nota",
  "paste",
@@ -632,7 +632,7 @@ dependencies = [
 [[package]]
 name = "signal-frame-macros"
 version = "0.1.1"
-source = "git+https://github.com/LiGoldragon/signal-frame.git?branch=main#d0dd5c0b66a90c1af72d45920e31c2b3049437f9"
+source = "git+https://github.com/LiGoldragon/signal-frame.git?branch=main#b78c80775c7fb7f80dee7ea3a8a30cc14dfac442"
 dependencies = [
  "proc-macro2",
  "quote",
