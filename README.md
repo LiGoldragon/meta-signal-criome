@@ -14,4 +14,4 @@ store location - the same record the daemon decodes at binary startup), with
 share one configuration type identity.
 
 Default builds are NOTA-free. Enable the `nota-text` feature for CLI/debug
-projection; the wire is binary/rkyv. See `INTENT.md`.
+projection; the wire is binary/rkyv. See `ARCHITECTURE.md`.

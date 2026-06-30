@@ -11,6 +11,21 @@ criome daemon. The baseline operation is `Configure`, carrying
 `signal_criome::CriomeDaemonConfiguration`, the same typed startup record the
 daemon decodes from its binary startup file.
 
+## Direction
+
+`meta-signal-criome` is the second leg of the criome contract pair. Every
+Persona component has exactly two contracts: the ordinary `signal-<component>`
+and the meta `meta-signal-<component>`. This repo completes that pair for
+`criome` by giving it the meta authority surface its ordinary contract lacked,
+so the `criome-daemon` has the configuration plane its startup record already
+implies.
+
+Possession of this meta socket is the MVP authority boundary for intercept
+policy mutation and parked-request answers. The same owner socket that applies
+daemon configuration also carries policy create/replace/cancel/list/observe,
+parked-request fetch, and parked-request answer; holding the socket is what
+distinguishes the authority caller from an ordinary peer.
+
 ## Owned
 
 - Meta authority wire vocabulary for criome.

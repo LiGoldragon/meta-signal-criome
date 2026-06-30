@@ -6,8 +6,7 @@ configuration.
 
 Required local reading:
 
-- `INTENT.md` first.
-- `ARCHITECTURE.md`.
+- `ARCHITECTURE.md` first.
 - `/home/li/primary/skills/contract-repo.md`.
 - `/home/li/primary/skills/component-triad.md`.
 
