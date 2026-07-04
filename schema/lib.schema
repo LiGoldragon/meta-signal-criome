@@ -25,6 +25,9 @@
   ParkedRequestSnapshot signal-criome:lib:ParkedRequestSnapshot
   ParkedRequestAnswer signal-criome:lib:ParkedRequestAnswer
   ParkedRequestResolution signal-criome:lib:ParkedRequestResolution
+  RootAnchorDigest signal-criome:lib:RootAnchorDigest
+  RootGenesis signal-criome:lib:RootGenesis
+  FoundingSignature signal-criome:lib:FoundingSignature
 }
 [(Configure CriomeDaemonConfiguration)
  (CreateInterceptPolicy InterceptPolicyProposal)
@@ -36,7 +39,8 @@
  (FetchParkedRequests ParkedRequestQuery)
  (AnswerParkedRequest ParkedRequestAnswer)
  (ObserveParkedAuthorizations ParkedAuthorizationObservation)
- (SubmitAuthorizationApproval AuthorizationApproval)]
+ (SubmitAuthorizationApproval AuthorizationApproval)
+ (AcceptRootFounding RootFoundingAcceptance)]
 [(Configured Configured)
  (InterceptPolicyCreated InterceptPolicy)
  (InterceptPolicyReplaced InterceptPolicy)
@@ -49,7 +53,9 @@
  (ParkedAuthorizationSnapshot ParkedAuthorizationSnapshot)
  (AuthorizationApprovalRecorded AuthorizationApprovalRecorded)
  (ConfigurationRejected ConfigurationRejected)
- (RequestUnimplemented RequestUnimplemented)]
+ (RequestUnimplemented RequestUnimplemented)
+ (RootFoundingAccepted RootFoundingAccepted)
+ (RootFoundingRejected RootFoundingRejected)]
 {
   ConfigurationGeneration Integer
 
@@ -80,6 +86,35 @@
     decision.AuthorizationApprovalDecision
   }
 
+  ;; ─── Root founding (owner-only, explicit, no auto-approval) ───────
+  ;;
+  ;; The owner explicitly founds this node's root by accepting the exact
+  ;; cohort it was configured to found. `anchor` is the self-certifying
+  ;; RootAnchorDigest (blake3(rkyv(RootGenesis))); `cohort` is the full
+  ;; RootGenesis so the daemon re-derives and matches the anchor before
+  ;; its master key emits an ATTACHED FoundingSignature. There is no
+  ;; auto-approval anywhere — acceptance is this explicit owner action.
+  RootFoundingAcceptance {
+    anchor.RootAnchorDigest
+    cohort.RootGenesis
+  }
+
+  RootFoundingRejectionReason [
+    CohortMismatch
+    AlreadyFounded
+    ManagerAuthorityRequired
+    MalformedGenesis
+  ]
+
+  RootFoundingAccepted {
+    anchor.RootAnchorDigest
+    FoundingSignature
+  }
+
+  RootFoundingRejected {
+    reason.RootFoundingRejectionReason
+  }
+
   InterceptPolicyObservation { }
 
   InterceptPolicyChange [
@@ -106,6 +141,7 @@
     AnswerParkedRequest
     ObserveParkedAuthorizations
     SubmitAuthorizationApproval
+    AcceptRootFounding
   ]
   UnimplementedReason [NotBuiltYet DependencyNotReady]
   RequestUnimplemented {

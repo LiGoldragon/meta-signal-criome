@@ -324,7 +324,7 @@ checksum = "88904434abc2901f197fe8cc55f0445e7ded921dba5911dad2e2b39b48e663c4"
 
 [[package]]
 name = "meta-signal-criome"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "nota",
  "rkyv",
@@ -555,7 +555,7 @@ dependencies = [
 [[package]]
 name = "schema-rust"
 version = "0.5.3"
-source = "git+https://github.com/LiGoldragon/schema-rust-next.git?branch=main#6218fb64f98c909de1eaa5c35744bd48a97a6f87"
+source = "git+https://github.com/LiGoldragon/schema-rust-next.git?branch=main#0eb5be666254f5ae9d0f5fee3befddbf98be2f42"
 dependencies = [
  "nota",
  "prettyplease",
@@ -605,8 +605,8 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "signal-criome"
-version = "0.6.0"
-source = "git+https://github.com/LiGoldragon/signal-criome.git?branch=main#808034740d1ff1cb8c9342dcab4548aaf204f9d5"
+version = "0.7.0"
+source = "git+https://github.com/LiGoldragon/signal-criome.git?branch=main#4195c6d905ac69a895adaf3f877d1ce94d8fbd80"
 dependencies = [
  "blake3",
  "blst",
@@ -777,7 +777,7 @@ dependencies = [
 [[package]]
 name = "triad-runtime"
 version = "0.6.1"
-source = "git+https://github.com/LiGoldragon/triad-runtime.git?branch=main#3d3207461bcbd39dd2505d0bb957b6fec30c98d9"
+source = "git+https://github.com/LiGoldragon/triad-runtime.git?branch=main#edc76f13caa17f68d62ab01cd495971fafbb4582"
 dependencies = [
  "kameo",
  "rkyv",

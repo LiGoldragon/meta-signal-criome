@@ -4,14 +4,18 @@ use meta_signal_criome::{
     AuthorizationApproval, AuthorizationApprovalDecision, AuthorizationApprovalRecorded,
     ConfigurationGeneration, ConfigurationRejected, ConfigurationRejectionReason,
     CriomeDaemonConfiguration, Input, OperationKind, Output, RequestUnimplemented,
-    UnimplementedReason,
+    RootFoundingAcceptance, RootFoundingAccepted, RootFoundingRejected,
+    RootFoundingRejectionReason, UnimplementedReason,
 };
 use nota::{NotaDecode, NotaEncode, NotaSource};
 use signal_criome::{
     AttestedMoment, AttestedMomentProposition, AuthorizationEvaluation, AuthorizationRequestSlot,
-    AuthorizedObjectKind, AuthorizedObjectReference, ComponentKind, ContractDigest, Evidence,
-    ObjectDigest, OperationDigest, ParkedAuthorization, ParkedAuthorizationObservation,
-    ParkedAuthorizationSnapshot, RequiredSignatureThreshold, TimeWindow, TimestampNanos,
+    AuthorizedObjectKind, AuthorizedObjectReference, BlsPublicKey, BlsSignature, ComponentKind,
+    Contract, ContractDigest, Evidence, FoundingMember, FoundingSignature, GenesisDomainTag,
+    Identity, ObjectDigest, OperationDigest, ParkedAuthorization, ParkedAuthorizationObservation,
+    ParkedAuthorizationSnapshot, PolicyMember, PrincipalName, ReplayNonce, RequiredSignatureThreshold,
+    RootAnchorDigest, RootGenesis, Rule, SignatureEnvelope, SignatureScheme, Threshold, TimeWindow,
+    TimestampNanos,
 };
 
 const CANONICAL: &str = include_str!("../examples/canonical.nota");
@@ -53,6 +57,43 @@ fn evaluation() -> AuthorizationEvaluation {
     }
 }
 
+fn founding_member(name: &str) -> FoundingMember {
+    FoundingMember::new(
+        Identity::Host(PrincipalName::new(name)),
+        BlsPublicKey::new(format!("{name}-master-pubkey")),
+    )
+}
+
+fn root_genesis() -> RootGenesis {
+    RootGenesis::new(
+        Contract::root(Rule::threshold(Threshold::new(
+            RequiredSignatureThreshold::new(2),
+            vec![
+                PolicyMember::key_member(Identity::Host(PrincipalName::new("mirror-alpha"))),
+                PolicyMember::key_member(Identity::Host(PrincipalName::new("mirror-beta"))),
+            ],
+        ))),
+        vec![founding_member("mirror-alpha"), founding_member("mirror-beta")],
+        GenesisDomainTag::CriomeRootFoundingV1,
+        ReplayNonce::new("genesis-nonce-1"),
+    )
+}
+
+fn root_anchor() -> RootAnchorDigest {
+    RootAnchorDigest::new(ObjectDigest::new("root-anchor-1"))
+}
+
+fn founding_signature() -> FoundingSignature {
+    FoundingSignature::new(
+        Identity::Host(PrincipalName::new("mirror-alpha")),
+        SignatureEnvelope {
+            scheme: SignatureScheme::Bls12_381MinPk,
+            public_key: BlsPublicKey::new("public-key-1"),
+            signature: BlsSignature::new("signature-1"),
+        },
+    )
+}
+
 fn round_trip<Value>(value: Value)
 where
     Value: NotaEncode + NotaDecode + PartialEq + std::fmt::Debug,
@@ -76,6 +117,10 @@ fn canonical_input_examples_round_trip() {
         request_slot: request_slot(),
         decision: AuthorizationApprovalDecision::Approve,
     }));
+    round_trip(Input::AcceptRootFounding(RootFoundingAcceptance::new(
+        root_anchor(),
+        root_genesis(),
+    )));
 }
 
 #[test]
@@ -100,4 +145,11 @@ fn canonical_output_examples_round_trip() {
         operation: OperationKind::Configure,
         reason: UnimplementedReason::DependencyNotReady,
     }));
+    round_trip(Output::RootFoundingAccepted(RootFoundingAccepted::new(
+        root_anchor(),
+        founding_signature(),
+    )));
+    round_trip(Output::RootFoundingRejected(RootFoundingRejected::new(
+        RootFoundingRejectionReason::CohortMismatch,
+    )));
 }

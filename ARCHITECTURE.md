@@ -36,6 +36,14 @@ distinguishes the authority caller from an ordinary peer.
   `RetractInterceptPolicyObservation`.
 - Parked Spirit request control operations:
   `FetchParkedRequests` and `AnswerParkedRequest`.
+- The owner-only root-founding accept: `AcceptRootFounding(RootFoundingAcceptance)`
+  — the explicit owner action that founds this node's root (there is no
+  auto-approval). The acceptance carries the self-certifying `RootAnchorDigest`
+  plus the full `RootGenesis` cohort (imported from `signal-criome`) so the daemon
+  re-derives and matches the anchor before its master key emits an attached
+  founding signature. Replies: `RootFoundingAccepted` (the anchor + this node's
+  attached, scheme-tagged `FoundingSignature`) and `RootFoundingRejected`
+  (`CohortMismatch | AlreadyFounded | ManagerAuthorityRequired | MalformedGenesis`).
 - Configuration replies: `Configured`, `ConfigurationRejected`, and
   `RequestUnimplemented`.
 - Optional NOTA projection behind the `nota-text` feature.

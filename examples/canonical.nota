@@ -12,6 +12,9 @@
 ;; Input::SubmitAuthorizationApproval
 (SubmitAuthorizationApproval (authorization-request-1 Approve))
 
+;; Input::AcceptRootFounding
+(AcceptRootFounding (root-anchor-1 (((Threshold (2 [(KeyMember (Host mirror-alpha)) (KeyMember (Host mirror-beta))])) Root) [((Host mirror-alpha) mirror-alpha-master-pubkey) ((Host mirror-beta) mirror-beta-master-pubkey)] CriomeRootFoundingV1 genesis-nonce-1)))
+
 ;; Output::Configured
 (Configured 7)
 
@@ -26,3 +29,9 @@
 
 ;; Output::RequestUnimplemented
 (RequestUnimplemented (Configure DependencyNotReady))
+
+;; Output::RootFoundingAccepted
+(RootFoundingAccepted (root-anchor-1 ((Host mirror-alpha) (Bls12_381MinPk public-key-1 signature-1))))
+
+;; Output::RootFoundingRejected
+(RootFoundingRejected CohortMismatch)

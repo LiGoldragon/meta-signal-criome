@@ -35,6 +35,12 @@ pub use signal_criome::schema::lib::ParkedRequestSnapshot as ParkedRequestSnapsh
 pub use signal_criome::schema::lib::ParkedRequestAnswer as ParkedRequestAnswer;
 #[rustfmt::skip]
 pub use signal_criome::schema::lib::ParkedRequestResolution as ParkedRequestResolution;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::RootAnchorDigest as RootAnchorDigest;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::RootGenesis as RootGenesis;
+#[rustfmt::skip]
+pub use signal_criome::schema::lib::FoundingSignature as FoundingSignature;
 
 #[rustfmt::skip]
 #[cfg(feature = "nota-text")]
@@ -134,6 +140,58 @@ pub struct AuthorizationApprovalRecorded {
     derive(nota::NotaDecode, nota::NotaDecodeTraced, nota::NotaEncode)
 )]
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct RootFoundingAcceptance {
+    pub anchor: RootAnchorDigest,
+    pub cohort: RootGenesis,
+}
+
+#[rustfmt::skip]
+#[cfg_attr(
+    feature = "nota-text",
+    derive(nota::NotaDecode, nota::NotaDecodeTraced, nota::NotaEncode)
+)]
+#[derive(
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+)]
+pub enum RootFoundingRejectionReason {
+    CohortMismatch,
+    AlreadyFounded,
+    ManagerAuthorityRequired,
+    MalformedGenesis,
+}
+
+#[rustfmt::skip]
+#[cfg_attr(
+    feature = "nota-text",
+    derive(nota::NotaDecode, nota::NotaDecodeTraced, nota::NotaEncode)
+)]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct RootFoundingAccepted {
+    pub anchor: RootAnchorDigest,
+    pub founding_signature: FoundingSignature,
+}
+
+#[rustfmt::skip]
+#[cfg_attr(
+    feature = "nota-text",
+    derive(nota::NotaDecode, nota::NotaDecodeTraced, nota::NotaEncode)
+)]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct RootFoundingRejected(RootFoundingRejectionReason);
+
+#[rustfmt::skip]
+#[cfg_attr(
+    feature = "nota-text",
+    derive(nota::NotaDecode, nota::NotaDecodeTraced, nota::NotaEncode)
+)]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct InterceptPolicyObservation {}
 
 #[rustfmt::skip]
@@ -193,6 +251,7 @@ pub enum OperationKind {
     AnswerParkedRequest,
     ObserveParkedAuthorizations,
     SubmitAuthorizationApproval,
+    AcceptRootFounding,
 }
 
 #[rustfmt::skip]
@@ -244,6 +303,7 @@ pub enum Input {
     AnswerParkedRequest(ParkedRequestAnswer),
     ObserveParkedAuthorizations(ParkedAuthorizationObservation),
     SubmitAuthorizationApproval(AuthorizationApproval),
+    AcceptRootFounding(RootFoundingAcceptance),
 }
 
 #[rustfmt::skip]
@@ -266,6 +326,8 @@ pub enum Output {
     AuthorizationApprovalRecorded(AuthorizationApprovalRecorded),
     ConfigurationRejected(ConfigurationRejected),
     RequestUnimplemented(RequestUnimplemented),
+    RootFoundingAccepted(RootFoundingAccepted),
+    RootFoundingRejected(RootFoundingRejected),
 }
 
 #[rustfmt::skip]
@@ -321,6 +383,25 @@ impl ConfigurationRejected {
 #[rustfmt::skip]
 impl From<ConfigurationRejectionReason> for ConfigurationRejected {
     fn from(payload: ConfigurationRejectionReason) -> Self {
+        Self::new(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl RootFoundingRejected {
+    pub fn new(payload: RootFoundingRejectionReason) -> Self {
+        Self(payload)
+    }
+    pub fn payload(&self) -> &RootFoundingRejectionReason {
+        &self.0
+    }
+    pub fn into_payload(self) -> RootFoundingRejectionReason {
+        self.0
+    }
+}
+#[rustfmt::skip]
+impl From<RootFoundingRejectionReason> for RootFoundingRejected {
+    fn from(payload: RootFoundingRejectionReason) -> Self {
         Self::new(payload)
     }
 }
@@ -401,6 +482,9 @@ impl Input {
     pub fn submit_authorization_approval(payload: AuthorizationApproval) -> Self {
         Self::SubmitAuthorizationApproval(payload)
     }
+    pub fn accept_root_founding(payload: RootFoundingAcceptance) -> Self {
+        Self::AcceptRootFounding(payload)
+    }
 }
 
 #[rustfmt::skip]
@@ -449,6 +533,12 @@ impl Output {
     }
     pub fn request_unimplemented(payload: RequestUnimplemented) -> Self {
         Self::RequestUnimplemented(payload)
+    }
+    pub fn root_founding_accepted(payload: RootFoundingAccepted) -> Self {
+        Self::RootFoundingAccepted(payload)
+    }
+    pub fn root_founding_rejected(payload: RootFoundingRejectionReason) -> Self {
+        Self::RootFoundingRejected(RootFoundingRejected::new(payload))
     }
 }
 
@@ -516,6 +606,13 @@ impl From<AuthorizationApproval> for Input {
 }
 
 #[rustfmt::skip]
+impl From<RootFoundingAcceptance> for Input {
+    fn from(payload: RootFoundingAcceptance) -> Self {
+        Self::AcceptRootFounding(payload)
+    }
+}
+
+#[rustfmt::skip]
 impl From<Configured> for Output {
     fn from(payload: Configured) -> Self {
         Self::Configured(payload)
@@ -579,6 +676,20 @@ impl From<RequestUnimplemented> for Output {
 }
 
 #[rustfmt::skip]
+impl From<RootFoundingAccepted> for Output {
+    fn from(payload: RootFoundingAccepted) -> Self {
+        Self::RootFoundingAccepted(payload)
+    }
+}
+
+#[rustfmt::skip]
+impl From<RootFoundingRejected> for Output {
+    fn from(payload: RootFoundingRejected) -> Self {
+        Self::RootFoundingRejected(payload)
+    }
+}
+
+#[rustfmt::skip]
 #[cfg(feature = "nota-text")]
 impl std::str::FromStr for Input {
     type Err = NotaDecodeError;
@@ -623,6 +734,7 @@ pub mod short_header {
     pub const INPUT_ANSWER_PARKED_REQUEST: u64 = 0x0008000000000000;
     pub const INPUT_OBSERVE_PARKED_AUTHORIZATIONS: u64 = 0x0009000000000000;
     pub const INPUT_SUBMIT_AUTHORIZATION_APPROVAL: u64 = 0x000A000000000000;
+    pub const INPUT_ACCEPT_ROOT_FOUNDING: u64 = 0x000B000000000000;
     pub const OUTPUT_CONFIGURED: u64 = 0x0100000000000000;
     pub const OUTPUT_INTERCEPT_POLICY_CREATED: u64 = 0x0101000000000000;
     pub const OUTPUT_INTERCEPT_POLICY_REPLACED: u64 = 0x0102000000000000;
@@ -636,6 +748,8 @@ pub mod short_header {
     pub const OUTPUT_AUTHORIZATION_APPROVAL_RECORDED: u64 = 0x010A000000000000;
     pub const OUTPUT_CONFIGURATION_REJECTED: u64 = 0x010B000000000000;
     pub const OUTPUT_REQUEST_UNIMPLEMENTED: u64 = 0x010C000000000000;
+    pub const OUTPUT_ROOT_FOUNDING_ACCEPTED: u64 = 0x010D000000000000;
+    pub const OUTPUT_ROOT_FOUNDING_REJECTED: u64 = 0x010E000000000000;
 }
 
 #[rustfmt::skip]
@@ -700,6 +814,7 @@ pub enum InputRoute {
     AnswerParkedRequest,
     ObserveParkedAuthorizations,
     SubmitAuthorizationApproval,
+    AcceptRootFounding,
 }
 
 #[rustfmt::skip]
@@ -731,6 +846,8 @@ pub enum OutputRoute {
     AuthorizationApprovalRecorded,
     ConfigurationRejected,
     RequestUnimplemented,
+    RootFoundingAccepted,
+    RootFoundingRejected,
 }
 
 #[rustfmt::skip]
@@ -754,6 +871,7 @@ impl Input {
             Self::SubmitAuthorizationApproval(_) => {
                 InputRoute::SubmitAuthorizationApproval
             }
+            Self::AcceptRootFounding(_) => InputRoute::AcceptRootFounding,
         }
     }
     pub fn short_header(&self) -> u64 {
@@ -779,6 +897,7 @@ impl Input {
             Self::SubmitAuthorizationApproval(_) => {
                 short_header::INPUT_SUBMIT_AUTHORIZATION_APPROVAL
             }
+            Self::AcceptRootFounding(_) => short_header::INPUT_ACCEPT_ROOT_FOUNDING,
         }
     }
     pub fn route_from_short_header(header: u64) -> Result<InputRoute, SignalFrameError> {
@@ -813,6 +932,9 @@ impl Input {
             }
             short_header::INPUT_SUBMIT_AUTHORIZATION_APPROVAL => {
                 Ok(InputRoute::SubmitAuthorizationApproval)
+            }
+            short_header::INPUT_ACCEPT_ROOT_FOUNDING => {
+                Ok(InputRoute::AcceptRootFounding)
             }
             _ => {
                 Err(SignalFrameError::UnknownHeader {
@@ -885,6 +1007,8 @@ impl Output {
             }
             Self::ConfigurationRejected(_) => OutputRoute::ConfigurationRejected,
             Self::RequestUnimplemented(_) => OutputRoute::RequestUnimplemented,
+            Self::RootFoundingAccepted(_) => OutputRoute::RootFoundingAccepted,
+            Self::RootFoundingRejected(_) => OutputRoute::RootFoundingRejected,
         }
     }
     pub fn short_header(&self) -> u64 {
@@ -922,6 +1046,8 @@ impl Output {
             }
             Self::ConfigurationRejected(_) => short_header::OUTPUT_CONFIGURATION_REJECTED,
             Self::RequestUnimplemented(_) => short_header::OUTPUT_REQUEST_UNIMPLEMENTED,
+            Self::RootFoundingAccepted(_) => short_header::OUTPUT_ROOT_FOUNDING_ACCEPTED,
+            Self::RootFoundingRejected(_) => short_header::OUTPUT_ROOT_FOUNDING_REJECTED,
         }
     }
     pub fn route_from_short_header(
@@ -964,6 +1090,12 @@ impl Output {
             }
             short_header::OUTPUT_REQUEST_UNIMPLEMENTED => {
                 Ok(OutputRoute::RequestUnimplemented)
+            }
+            short_header::OUTPUT_ROOT_FOUNDING_ACCEPTED => {
+                Ok(OutputRoute::RootFoundingAccepted)
+            }
+            short_header::OUTPUT_ROOT_FOUNDING_REJECTED => {
+                Ok(OutputRoute::RootFoundingRejected)
             }
             _ => {
                 Err(SignalFrameError::UnknownHeader {
@@ -1027,6 +1159,7 @@ impl signal_frame::SignalOperationHeads for Input {
         "AnswerParkedRequest",
         "ObserveParkedAuthorizations",
         "SubmitAuthorizationApproval",
+        "AcceptRootFounding",
     ];
 }
 #[rustfmt::skip]
