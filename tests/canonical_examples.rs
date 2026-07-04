@@ -3,9 +3,10 @@
 use meta_signal_criome::{
     AuthorizationApproval, AuthorizationApprovalDecision, AuthorizationApprovalRecorded,
     ConfigurationGeneration, ConfigurationRejected, ConfigurationRejectionReason,
-    CriomeDaemonConfiguration, Input, OperationKind, Output, RequestUnimplemented,
-    RootFoundingAcceptance, RootFoundingAccepted, RootFoundingRejected,
-    RootFoundingRejectionReason, UnimplementedReason,
+    CriomeDaemonConfiguration, Input, OperationKind, Output, PendingFounding, RequestUnimplemented,
+    RootFoundingAcceptance, RootFoundingAccepted, RootFoundingInitiation, RootFoundingObservation,
+    RootFoundingRejected, RootFoundingRejectionReason, RootFoundingState, RootFoundingStatus,
+    UnimplementedReason,
 };
 use nota::{NotaDecode, NotaEncode, NotaSource};
 use signal_criome::{
@@ -13,9 +14,9 @@ use signal_criome::{
     AuthorizedObjectKind, AuthorizedObjectReference, BlsPublicKey, BlsSignature, ComponentKind,
     Contract, ContractDigest, Evidence, FoundingMember, FoundingSignature, GenesisDomainTag,
     Identity, ObjectDigest, OperationDigest, ParkedAuthorization, ParkedAuthorizationObservation,
-    ParkedAuthorizationSnapshot, PolicyMember, PrincipalName, ReplayNonce, RequiredSignatureThreshold,
-    RootAnchorDigest, RootGenesis, Rule, SignatureEnvelope, SignatureScheme, Threshold, TimeWindow,
-    TimestampNanos,
+    ParkedAuthorizationSnapshot, PolicyMember, PrincipalName, ReplayNonce,
+    RequiredSignatureThreshold, RootAnchorDigest, RootGenesis, Rule, SignatureEnvelope,
+    SignatureScheme, Threshold, TimeWindow, TimestampNanos,
 };
 
 const CANONICAL: &str = include_str!("../examples/canonical.nota");
@@ -73,7 +74,10 @@ fn root_genesis() -> RootGenesis {
                 PolicyMember::key_member(Identity::Host(PrincipalName::new("mirror-beta"))),
             ],
         ))),
-        vec![founding_member("mirror-alpha"), founding_member("mirror-beta")],
+        vec![
+            founding_member("mirror-alpha"),
+            founding_member("mirror-beta"),
+        ],
         GenesisDomainTag::CriomeRootFoundingV1,
         ReplayNonce::new("genesis-nonce-1"),
     )
@@ -92,6 +96,17 @@ fn founding_signature() -> FoundingSignature {
             signature: BlsSignature::new("signature-1"),
         },
     )
+}
+
+fn root_founding_status() -> RootFoundingStatus {
+    RootFoundingStatus {
+        state: RootFoundingState::Gathering,
+        pending: vec![PendingFounding {
+            anchor: root_anchor(),
+            cohort: root_genesis(),
+            initiator: Identity::Host(PrincipalName::new("mirror-alpha")),
+        }],
+    }
 }
 
 fn round_trip<Value>(value: Value)
@@ -121,6 +136,10 @@ fn canonical_input_examples_round_trip() {
         root_anchor(),
         root_genesis(),
     )));
+    round_trip(Input::InitiateRootFounding(RootFoundingInitiation::new(
+        root_genesis(),
+    )));
+    round_trip(Input::ObserveRootFounding(RootFoundingObservation::new()));
 }
 
 #[test]
@@ -152,4 +171,5 @@ fn canonical_output_examples_round_trip() {
     round_trip(Output::RootFoundingRejected(RootFoundingRejected::new(
         RootFoundingRejectionReason::CohortMismatch,
     )));
+    round_trip(Output::RootFoundingStatus(root_founding_status()));
 }

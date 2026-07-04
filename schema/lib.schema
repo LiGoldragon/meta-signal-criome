@@ -28,6 +28,7 @@
   RootAnchorDigest signal-criome:lib:RootAnchorDigest
   RootGenesis signal-criome:lib:RootGenesis
   FoundingSignature signal-criome:lib:FoundingSignature
+  Identity signal-criome:lib:Identity
 }
 [(Configure CriomeDaemonConfiguration)
  (CreateInterceptPolicy InterceptPolicyProposal)
@@ -40,7 +41,9 @@
  (AnswerParkedRequest ParkedRequestAnswer)
  (ObserveParkedAuthorizations ParkedAuthorizationObservation)
  (SubmitAuthorizationApproval AuthorizationApproval)
- (AcceptRootFounding RootFoundingAcceptance)]
+ (AcceptRootFounding RootFoundingAcceptance)
+ (InitiateRootFounding RootFoundingInitiation)
+ (ObserveRootFounding RootFoundingObservation)]
 [(Configured Configured)
  (InterceptPolicyCreated InterceptPolicy)
  (InterceptPolicyReplaced InterceptPolicy)
@@ -55,7 +58,8 @@
  (ConfigurationRejected ConfigurationRejected)
  (RequestUnimplemented RequestUnimplemented)
  (RootFoundingAccepted RootFoundingAccepted)
- (RootFoundingRejected RootFoundingRejected)]
+ (RootFoundingRejected RootFoundingRejected)
+ (RootFoundingStatus RootFoundingStatus)]
 {
   ConfigurationGeneration Integer
 
@@ -115,6 +119,46 @@
     reason.RootFoundingRejectionReason
   }
 
+  ;; ─── Cross-node founding (owner-driven, over the router voice) ────
+  ;;
+  ;; The owner initiates a multi-node founding on ONE node (the
+  ;; initiator) by handing it the full cohort; the daemon conveys a
+  ;; founding Proposal to each peer over the router voice and records the
+  ;; gathering. Each owner then explicitly accepts on their own node
+  ;; (AcceptRootFounding, above), which returns that node's signature to
+  ;; the initiator until the cohort is unanimous and the finished root is
+  ;; distributed. ObserveRootFounding surfaces this node's founding state
+  ;; and the pending-founding queue so the operator knows what awaits an
+  ;; accept and which anchor to accept.
+  RootFoundingInitiation {
+    cohort.RootGenesis
+  }
+
+  RootFoundingObservation { }
+
+  ;; This node's own founding progress, derived from its single founded
+  ;; record: no record yet, gathering signatures, or unanimous (founded).
+  RootFoundingState [
+    Unfounded
+    Gathering
+    Founded
+  ]
+
+  ;; One founding awaiting an explicit owner accept on this node. `cohort`
+  ;; carries the full self-certifying RootGenesis so the owner can accept
+  ;; by anchor alone; `initiator` is the node that proposed it (this node
+  ;; itself for a locally initiated founding).
+  PendingFounding {
+    anchor.RootAnchorDigest
+    cohort.RootGenesis
+    initiator.Identity
+  }
+
+  RootFoundingStatus {
+    state.RootFoundingState
+    pending.(Vector PendingFounding)
+  }
+
   InterceptPolicyObservation { }
 
   InterceptPolicyChange [
@@ -142,6 +186,8 @@
     ObserveParkedAuthorizations
     SubmitAuthorizationApproval
     AcceptRootFounding
+    InitiateRootFounding
+    ObserveRootFounding
   ]
   UnimplementedReason [NotBuiltYet DependencyNotReady]
   RequestUnimplemented {

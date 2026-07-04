@@ -15,6 +15,12 @@
 ;; Input::AcceptRootFounding
 (AcceptRootFounding (root-anchor-1 (((Threshold (2 [(KeyMember (Host mirror-alpha)) (KeyMember (Host mirror-beta))])) Root) [((Host mirror-alpha) mirror-alpha-master-pubkey) ((Host mirror-beta) mirror-beta-master-pubkey)] CriomeRootFoundingV1 genesis-nonce-1)))
 
+;; Input::InitiateRootFounding — the owner hands the initiator the full cohort
+(InitiateRootFounding (((Threshold (2 [(KeyMember (Host mirror-alpha)) (KeyMember (Host mirror-beta))])) Root) [((Host mirror-alpha) mirror-alpha-master-pubkey) ((Host mirror-beta) mirror-beta-master-pubkey)] CriomeRootFoundingV1 genesis-nonce-1))
+
+;; Input::ObserveRootFounding
+(ObserveRootFounding ())
+
 ;; Output::Configured
 (Configured 7)
 
@@ -35,3 +41,6 @@
 
 ;; Output::RootFoundingRejected
 (RootFoundingRejected CohortMismatch)
+
+;; Output::RootFoundingStatus — founding state + the pending-founding queue
+(RootFoundingStatus (Gathering [(root-anchor-1 (((Threshold (2 [(KeyMember (Host mirror-alpha)) (KeyMember (Host mirror-beta))])) Root) [((Host mirror-alpha) mirror-alpha-master-pubkey) ((Host mirror-beta) mirror-beta-master-pubkey)] CriomeRootFoundingV1 genesis-nonce-1) (Host mirror-alpha))]))

@@ -53,3 +53,25 @@ impl RootFoundingAccepted {
         }
     }
 }
+
+impl RootFoundingObservation {
+    /// The owner's read of this node's founding progress and its
+    /// pending-founding queue; the request carries no selector.
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Default for RootFoundingObservation {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RootFoundingStatus {
+    /// This node's founding `state` and the `pending` foundings awaiting an
+    /// explicit owner accept.
+    pub fn new(state: RootFoundingState, pending: Vec<PendingFounding>) -> Self {
+        Self { state, pending }
+    }
+}

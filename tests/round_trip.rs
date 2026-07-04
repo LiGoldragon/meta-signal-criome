@@ -4,23 +4,27 @@ use meta_signal_criome::{
     AuthorizationApproval, AuthorizationApprovalDecision, AuthorizationApprovalRecorded,
     ConfigurationGeneration, ConfigurationRejected, ConfigurationRejectionReason,
     CriomeDaemonConfiguration, Frame, FrameBody, Input, InterceptPolicyObservation,
-    InterceptPolicyStreamToken, OperationKind, Output, RequestUnimplemented, UnimplementedReason,
+    InterceptPolicyStreamToken, OperationKind, Output, PendingFounding, RequestUnimplemented,
+    RootFoundingInitiation, RootFoundingObservation, RootFoundingState, RootFoundingStatus,
+    UnimplementedReason,
 };
 #[cfg(feature = "nota-text")]
 use nota::{NotaDecode, NotaEncode, NotaSource};
 use signal_criome::{
     ActiveInterceptPolicies, ApprovalAuditSource, AttestedMoment, AttestedMomentProposition,
     AuthorizationEvaluation, AuthorizationRequestSlot, AuthorizedObjectKind,
-    AuthorizedObjectReference, ComponentKind, ContractDigest, Evidence, ExpiryAction,
-    InterceptPolicy, InterceptPolicyCancellation, InterceptPolicyIdentifier,
-    InterceptPolicyProposal, InterceptPolicyWindow, InterceptTargetSelector, MentciSessionSlot,
+    AuthorizedObjectReference, BlsPublicKey, ComponentKind, Contract, ContractDigest, Evidence,
+    ExpiryAction, FoundingMember, GenesisDomainTag, Identity, InterceptPolicy,
+    InterceptPolicyCancellation, InterceptPolicyIdentifier, InterceptPolicyProposal,
+    InterceptPolicyWindow, InterceptTargetSelector, MentciSessionSlot, ObjectDigest,
     OperationDigest, ParkedAuthorization, ParkedAuthorizationObservation,
     ParkedAuthorizationSnapshot, ParkedRequestAnswer, ParkedRequestDecision,
     ParkedRequestIdentifier, ParkedRequestOutcome, ParkedRequestQuery, ParkedRequestResolution,
-    ParkedRequestSnapshot, ParkedSpiritRequest, PolicyDurationNanos, PolicyOverlapMode,
-    PolicyPriority, RawSpiritOperationPayload, RequiredSignatureThreshold,
-    SpiritAuthorizationContext, SpiritOperationName, SpiritOperationNames, SpiritProcessKey,
-    TimeWindow, TimestampNanos,
+    ParkedRequestSnapshot, ParkedSpiritRequest, PolicyDurationNanos, PolicyMember,
+    PolicyOverlapMode, PolicyPriority, PrincipalName, RawSpiritOperationPayload, ReplayNonce,
+    RequiredSignatureThreshold, RootAnchorDigest, RootGenesis, Rule, SpiritAuthorizationContext,
+    SpiritOperationName, SpiritOperationNames, SpiritProcessKey, Threshold, TimeWindow,
+    TimestampNanos,
 };
 use signal_frame::{
     ExchangeIdentifier, ExchangeLane, LaneSequence, NonEmpty, Reply, RequestPayload, SessionEpoch,
@@ -37,6 +41,46 @@ fn exchange() -> ExchangeIdentifier {
 
 fn configuration() -> CriomeDaemonConfiguration {
     CriomeDaemonConfiguration::new("/run/criome/criome.sock", "/var/lib/criome/criome.sema")
+}
+
+fn founding_member(name: &str) -> FoundingMember {
+    FoundingMember::new(
+        Identity::Host(PrincipalName::new(name)),
+        BlsPublicKey::new(format!("{name}-master-pubkey")),
+    )
+}
+
+fn root_genesis() -> RootGenesis {
+    RootGenesis::new(
+        Contract::root(Rule::threshold(Threshold::new(
+            RequiredSignatureThreshold::new(2),
+            vec![
+                PolicyMember::key_member(Identity::Host(PrincipalName::new("mirror-alpha"))),
+                PolicyMember::key_member(Identity::Host(PrincipalName::new("mirror-beta"))),
+            ],
+        ))),
+        vec![
+            founding_member("mirror-alpha"),
+            founding_member("mirror-beta"),
+        ],
+        GenesisDomainTag::CriomeRootFoundingV1,
+        ReplayNonce::new("genesis-nonce-1"),
+    )
+}
+
+fn root_anchor() -> RootAnchorDigest {
+    RootAnchorDigest::new(ObjectDigest::new("root-anchor-1"))
+}
+
+fn root_founding_status() -> RootFoundingStatus {
+    RootFoundingStatus {
+        state: RootFoundingState::Gathering,
+        pending: vec![PendingFounding {
+            anchor: root_anchor(),
+            cohort: root_genesis(),
+            initiator: Identity::Host(PrincipalName::new("mirror-alpha")),
+        }],
+    }
 }
 
 fn evaluation() -> AuthorizationEvaluation {
@@ -295,6 +339,24 @@ fn reply_variants_round_trip() {
         #[cfg(feature = "nota-text")]
         assert_nota_round_trips(&reply);
     }
+}
+
+#[test]
+fn cross_node_founding_meta_ops_round_trip() {
+    let requests = [
+        Input::InitiateRootFounding(RootFoundingInitiation::new(root_genesis())),
+        Input::ObserveRootFounding(RootFoundingObservation::new()),
+    ];
+    for request in requests {
+        assert_request_round_trips(request.clone());
+        #[cfg(feature = "nota-text")]
+        assert_nota_round_trips(&request);
+    }
+
+    let reply = Output::RootFoundingStatus(root_founding_status());
+    assert_reply_round_trips(reply.clone());
+    #[cfg(feature = "nota-text")]
+    assert_nota_round_trips(&reply);
 }
 
 #[test]
