@@ -56,12 +56,12 @@ distinguishes the authority caller from an ordinary peer.
   `signal-criome`; this contract imports them and exposes the owner/meta
   authority verbs.
 - Criome daemon state, sockets, actors, and storage live in `criome`.
-- Schema generation machinery lives in `schema-next` / `schema-rust-next`.
+- Schema generation machinery lives in `schema` / `schema-rust`.
 
 ## Code Map
 
 - `schema/lib.schema` is the source of the meta wire vocabulary.
-- `build.rs` runs `schema-rust-next` and imports
+- `build.rs` runs `schema-rust` and imports
   `signal_criome::CriomeDaemonConfiguration` from `signal-criome`.
 - `src/schema/lib.rs` is the checked-in generated artifact.
 - `src/lib.rs` re-exports the generated nouns and keeps only tiny
