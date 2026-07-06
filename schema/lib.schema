@@ -119,11 +119,11 @@
     reason.RootFoundingRejectionReason
   }
 
-  ;; ─── Cross-node founding (owner-driven, over the router voice) ────
+  ;; ─── Cross-node founding (owner-driven, over the router) ──────────
   ;;
   ;; The owner initiates a multi-node founding on ONE node (the
   ;; initiator) by handing it the full cohort; the daemon conveys a
-  ;; founding Proposal to each peer over the router voice and records the
+  ;; founding Proposal to each peer over the router and records the
   ;; gathering. Each owner then explicitly accepts on their own node
   ;; (AcceptRootFounding, above), which returns that node's signature to
   ;; the initiator until the cohort is unanimous and the finished root is
