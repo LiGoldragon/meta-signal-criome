@@ -32,11 +32,11 @@ fn request_slot() -> AuthorizationRequestSlot {
 fn evaluation() -> AuthorizationEvaluation {
     let operation = OperationDigest::new(ObjectDigest::new("operation-digest-1"));
     AuthorizationEvaluation {
-        contract: ContractDigest::new(ObjectDigest::new("contract-digest-1")),
-        object: AuthorizedObjectReference {
-            component: ComponentKind::Spirit,
-            digest: operation.object_digest().clone(),
-            kind: AuthorizedObjectKind::Head,
+        contract_digest: ContractDigest::new(ObjectDigest::new("contract-digest-1")),
+        authorized_object_reference: AuthorizedObjectReference {
+            component_kind: ComponentKind::Spirit,
+            object_digest: operation.object_digest().clone(),
+            authorized_object_kind: AuthorizedObjectKind::Head,
         },
         evidence: Evidence::new(
             ComponentKind::Spirit,
@@ -91,20 +91,20 @@ fn founding_signature() -> FoundingSignature {
     FoundingSignature::new(
         Identity::Host(PrincipalName::new("mirror-alpha")),
         SignatureEnvelope {
-            scheme: SignatureScheme::Bls12_381MinPk,
-            public_key: BlsPublicKey::new("public-key-1"),
-            signature: BlsSignature::new("signature-1"),
+            signature_scheme: SignatureScheme::Bls12_381MinPk,
+            bls_public_key: BlsPublicKey::new("public-key-1"),
+            bls_signature: BlsSignature::new("signature-1"),
         },
     )
 }
 
 fn root_founding_status() -> RootFoundingStatus {
     RootFoundingStatus {
-        state: RootFoundingState::Gathering,
-        pending: vec![PendingFounding {
-            anchor: root_anchor(),
-            cohort: root_genesis(),
-            initiator: Identity::Host(PrincipalName::new("mirror-alpha")),
+        root_founding_state: RootFoundingState::Gathering,
+        pending_founding_vector: vec![PendingFounding {
+            root_anchor_digest: root_anchor(),
+            root_genesis: root_genesis(),
+            identity: Identity::Host(PrincipalName::new("mirror-alpha")),
         }],
     }
 }
@@ -129,8 +129,8 @@ fn canonical_input_examples_round_trip() {
         ParkedAuthorizationObservation::new(),
     ));
     round_trip(Input::SubmitAuthorizationApproval(AuthorizationApproval {
-        request_slot: request_slot(),
-        decision: AuthorizationApprovalDecision::Approve,
+        authorization_request_slot: request_slot(),
+        authorization_approval_decision: AuthorizationApprovalDecision::Approve,
     }));
     round_trip(Input::AcceptRootFounding(RootFoundingAcceptance::new(
         root_anchor(),
@@ -153,16 +153,16 @@ fn canonical_output_examples_round_trip() {
     ));
     round_trip(Output::AuthorizationApprovalRecorded(
         AuthorizationApprovalRecorded {
-            request_slot: request_slot(),
-            decision: AuthorizationApprovalDecision::Approve,
+            authorization_request_slot: request_slot(),
+            authorization_approval_decision: AuthorizationApprovalDecision::Approve,
         },
     ));
     round_trip(Output::ConfigurationRejected(ConfigurationRejected::new(
         ConfigurationRejectionReason::ManagerAuthorityRequired,
     )));
     round_trip(Output::RequestUnimplemented(RequestUnimplemented {
-        operation: OperationKind::Configure,
-        reason: UnimplementedReason::DependencyNotReady,
+        operation_kind: OperationKind::Configure,
+        unimplemented_reason: UnimplementedReason::DependencyNotReady,
     }));
     round_trip(Output::RootFoundingAccepted(RootFoundingAccepted::new(
         root_anchor(),

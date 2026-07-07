@@ -64,7 +64,7 @@
   ConfigurationGeneration Integer
 
   Configured {
-    generation.ConfigurationGeneration
+    ConfigurationGeneration
   }
 
   ConfigurationRejectionReason [
@@ -73,7 +73,7 @@
     StoreUnavailable
   ]
   ConfigurationRejected {
-    reason.ConfigurationRejectionReason
+    ConfigurationRejectionReason
   }
 
   AuthorizationApprovalDecision [
@@ -82,12 +82,12 @@
     Defer
   ]
   AuthorizationApproval {
-    request_slot.AuthorizationRequestSlot
-    decision.AuthorizationApprovalDecision
+    AuthorizationRequestSlot
+    AuthorizationApprovalDecision
   }
   AuthorizationApprovalRecorded {
-    request_slot.AuthorizationRequestSlot
-    decision.AuthorizationApprovalDecision
+    AuthorizationRequestSlot
+    AuthorizationApprovalDecision
   }
 
   ;; ─── Root founding (owner-only, explicit, no auto-approval) ───────
@@ -99,8 +99,8 @@
   ;; its master key emits an ATTACHED FoundingSignature. There is no
   ;; auto-approval anywhere — acceptance is this explicit owner action.
   RootFoundingAcceptance {
-    anchor.RootAnchorDigest
-    cohort.RootGenesis
+    RootAnchorDigest
+    RootGenesis
   }
 
   RootFoundingRejectionReason [
@@ -111,12 +111,12 @@
   ]
 
   RootFoundingAccepted {
-    anchor.RootAnchorDigest
+    RootAnchorDigest
     FoundingSignature
   }
 
   RootFoundingRejected {
-    reason.RootFoundingRejectionReason
+    RootFoundingRejectionReason
   }
 
   ;; ─── Cross-node founding (owner-driven, over the router) ──────────
@@ -131,7 +131,7 @@
   ;; and the pending-founding queue so the operator knows what awaits an
   ;; accept and which anchor to accept.
   RootFoundingInitiation {
-    cohort.RootGenesis
+    RootGenesis
   }
 
   RootFoundingObservation { }
@@ -149,14 +149,14 @@
   ;; by anchor alone; `initiator` is the node that proposed it (this node
   ;; itself for a locally initiated founding).
   PendingFounding {
-    anchor.RootAnchorDigest
-    cohort.RootGenesis
-    initiator.Identity
+    RootAnchorDigest
+    RootGenesis
+    Identity
   }
 
   RootFoundingStatus {
-    state.RootFoundingState
-    pending.(Vector PendingFounding)
+    RootFoundingState
+    (Vector PendingFounding)
   }
 
   InterceptPolicyObservation { }
@@ -191,7 +191,7 @@
   ]
   UnimplementedReason [NotBuiltYet DependencyNotReady]
   RequestUnimplemented {
-    operation.OperationKind
-    reason.UnimplementedReason
+    OperationKind
+    UnimplementedReason
   }
 }

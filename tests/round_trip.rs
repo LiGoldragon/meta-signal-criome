@@ -74,11 +74,11 @@ fn root_anchor() -> RootAnchorDigest {
 
 fn root_founding_status() -> RootFoundingStatus {
     RootFoundingStatus {
-        state: RootFoundingState::Gathering,
-        pending: vec![PendingFounding {
-            anchor: root_anchor(),
-            cohort: root_genesis(),
-            initiator: Identity::Host(PrincipalName::new("mirror-alpha")),
+        root_founding_state: RootFoundingState::Gathering,
+        pending_founding_vector: vec![PendingFounding {
+            root_anchor_digest: root_anchor(),
+            root_genesis: root_genesis(),
+            identity: Identity::Host(PrincipalName::new("mirror-alpha")),
         }],
     }
 }
@@ -86,11 +86,11 @@ fn root_founding_status() -> RootFoundingStatus {
 fn evaluation() -> AuthorizationEvaluation {
     let operation = OperationDigest::from_bytes(b"mentci-meta-approval");
     AuthorizationEvaluation {
-        contract: ContractDigest::from_bytes(b"approval-contract"),
-        object: AuthorizedObjectReference {
-            component: ComponentKind::Spirit,
-            digest: operation.object_digest().clone(),
-            kind: AuthorizedObjectKind::Head,
+        contract_digest: ContractDigest::from_bytes(b"approval-contract"),
+        authorized_object_reference: AuthorizedObjectReference {
+            component_kind: ComponentKind::Spirit,
+            object_digest: operation.object_digest().clone(),
+            authorized_object_kind: AuthorizedObjectKind::Head,
         },
         evidence: Evidence::new(
             ComponentKind::Spirit,
@@ -141,28 +141,28 @@ fn spirit_operation_names() -> SpiritOperationNames {
 
 fn intercept_policy_proposal() -> InterceptPolicyProposal {
     InterceptPolicyProposal {
-        session_slot: mentci_session_slot(),
-        target: intercept_target(),
+        mentci_session_slot: mentci_session_slot(),
+        intercept_target_selector: intercept_target(),
         spirit_operation_names: spirit_operation_names(),
-        duration: PolicyDurationNanos::new(100),
+        policy_duration_nanos: PolicyDurationNanos::new(100),
         expiry_action: ExpiryAction::AutoApprove,
-        priority: PolicyPriority::new(50),
-        overlap_mode: PolicyOverlapMode::RejectSamePriorityOverlap,
+        policy_priority: PolicyPriority::new(50),
+        policy_overlap_mode: PolicyOverlapMode::RejectSamePriorityOverlap,
     }
 }
 
 fn intercept_policy() -> InterceptPolicy {
     InterceptPolicy {
-        identifier: intercept_policy_identifier(),
-        session_slot: mentci_session_slot(),
-        target: intercept_target(),
+        intercept_policy_identifier: intercept_policy_identifier(),
+        mentci_session_slot: mentci_session_slot(),
+        intercept_target_selector: intercept_target(),
         spirit_operation_names: spirit_operation_names(),
-        window: InterceptPolicyWindow {
+        intercept_policy_window: InterceptPolicyWindow {
             starts_at: TimestampNanos::new(100),
             expires_at: TimestampNanos::new(200),
         },
         expiry_action: ExpiryAction::AutoApprove,
-        priority: PolicyPriority::new(50),
+        policy_priority: PolicyPriority::new(50),
     }
 }
 
@@ -172,27 +172,27 @@ fn active_intercept_policies() -> ActiveInterceptPolicies {
 
 fn parked_request_query() -> ParkedRequestQuery {
     ParkedRequestQuery {
-        session_slot: Some(mentci_session_slot()),
-        target: Some(intercept_target()),
+        optional_mentci_session_slot: Some(mentci_session_slot()),
+        optional_intercept_target_selector: Some(intercept_target()),
     }
 }
 
 fn parked_request_answer() -> ParkedRequestAnswer {
     ParkedRequestAnswer {
-        identifier: ParkedRequestIdentifier::new("parked-request-1"),
-        decision: ParkedRequestDecision::Approve,
+        parked_request_identifier: ParkedRequestIdentifier::new("parked-request-1"),
+        parked_request_decision: ParkedRequestDecision::Approve,
     }
 }
 
 fn parked_spirit_request() -> ParkedSpiritRequest {
     ParkedSpiritRequest {
-        identifier: ParkedRequestIdentifier::new("parked-request-1"),
-        matched_policy: intercept_policy_identifier(),
-        session_slot: mentci_session_slot(),
-        context: SpiritAuthorizationContext {
-            operation_name: SpiritOperationName::new("Record"),
-            raw_payload: RawSpiritOperationPayload::new("(Record (...))"),
-            target_key: spirit_process_key(),
+        parked_request_identifier: ParkedRequestIdentifier::new("parked-request-1"),
+        intercept_policy_identifier: intercept_policy_identifier(),
+        mentci_session_slot: mentci_session_slot(),
+        spirit_authorization_context: SpiritAuthorizationContext {
+            spirit_operation_name: SpiritOperationName::new("Record"),
+            raw_spirit_operation_payload: RawSpiritOperationPayload::new("(Record (...))"),
+            spirit_process_key: spirit_process_key(),
         },
         parked_at: TimestampNanos::new(120),
         expires_at: TimestampNanos::new(200),
@@ -206,11 +206,11 @@ fn parked_request_snapshot() -> ParkedRequestSnapshot {
 
 fn parked_request_resolution() -> ParkedRequestResolution {
     ParkedRequestResolution {
-        identifier: ParkedRequestIdentifier::new("parked-request-1"),
-        matched_policy: intercept_policy_identifier(),
-        outcome: ParkedRequestOutcome::Approved,
-        audit_source: ApprovalAuditSource::Manual,
-        resolved_at: TimestampNanos::new(130),
+        parked_request_identifier: ParkedRequestIdentifier::new("parked-request-1"),
+        intercept_policy_identifier: intercept_policy_identifier(),
+        parked_request_outcome: ParkedRequestOutcome::Approved,
+        approval_audit_source: ApprovalAuditSource::Manual,
+        timestamp_nanos: TimestampNanos::new(130),
     }
 }
 
@@ -273,8 +273,8 @@ fn configure_request_carries_the_signal_criome_configuration_type() {
 #[test]
 fn authorization_approval_request_round_trips() {
     let request = Input::SubmitAuthorizationApproval(AuthorizationApproval {
-        request_slot: request_slot(),
-        decision: AuthorizationApprovalDecision::Approve,
+        authorization_request_slot: request_slot(),
+        authorization_approval_decision: AuthorizationApprovalDecision::Approve,
     });
     assert_request_round_trips(request.clone());
     #[cfg(feature = "nota-text")]
@@ -323,15 +323,15 @@ fn reply_variants_round_trip() {
             ParkedAuthorization::from_evaluation(request_slot(), evaluation()),
         ])),
         Output::authorization_approval_recorded(AuthorizationApprovalRecorded {
-            request_slot: request_slot(),
-            decision: AuthorizationApprovalDecision::Approve,
+            authorization_request_slot: request_slot(),
+            authorization_approval_decision: AuthorizationApprovalDecision::Approve,
         }),
         Output::ConfigurationRejected(ConfigurationRejected::new(
             ConfigurationRejectionReason::ManagerAuthorityRequired,
         )),
         Output::RequestUnimplemented(RequestUnimplemented {
-            operation: OperationKind::Configure,
-            reason: UnimplementedReason::DependencyNotReady,
+            operation_kind: OperationKind::Configure,
+            unimplemented_reason: UnimplementedReason::DependencyNotReady,
         }),
     ];
     for reply in replies {

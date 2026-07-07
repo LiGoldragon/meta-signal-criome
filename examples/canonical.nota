@@ -4,7 +4,7 @@
 ;; imported rather than duplicated in this contract.
 
 ;; Input::Configure
-(Configure (/run/criome/criome.sock /var/lib/criome/criome.sema None None Quorum None))
+(Configure (/run/criome/criome.sock /var/lib/criome/criome.sema None None Quorum None None None))
 
 ;; Input::ObserveParkedAuthorizations
 (ObserveParkedAuthorizations ())

@@ -39,7 +39,10 @@ impl RootFoundingAcceptance {
     /// the full `cohort` (RootGenesis) so the daemon re-derives and matches the
     /// anchor before its master key emits an attached founding signature.
     pub fn new(anchor: RootAnchorDigest, cohort: RootGenesis) -> Self {
-        Self { anchor, cohort }
+        Self {
+            root_anchor_digest: anchor,
+            root_genesis: cohort,
+        }
     }
 }
 
@@ -48,7 +51,7 @@ impl RootFoundingAccepted {
     /// attached, scheme-tagged `FoundingSignature` over the founding statement.
     pub fn new(anchor: RootAnchorDigest, founding_signature: FoundingSignature) -> Self {
         Self {
-            anchor,
+            root_anchor_digest: anchor,
             founding_signature,
         }
     }
@@ -72,6 +75,9 @@ impl RootFoundingStatus {
     /// This node's founding `state` and the `pending` foundings awaiting an
     /// explicit owner accept.
     pub fn new(state: RootFoundingState, pending: Vec<PendingFounding>) -> Self {
-        Self { state, pending }
+        Self {
+            root_founding_state: state,
+            pending_founding_vector: pending,
+        }
     }
 }

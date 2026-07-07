@@ -121,8 +121,8 @@ pub enum AuthorizationApprovalDecision {
 )]
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct AuthorizationApproval {
-    pub request_slot: AuthorizationRequestSlot,
-    pub decision: AuthorizationApprovalDecision,
+    pub authorization_request_slot: AuthorizationRequestSlot,
+    pub authorization_approval_decision: AuthorizationApprovalDecision,
 }
 
 #[rustfmt::skip]
@@ -132,8 +132,8 @@ pub struct AuthorizationApproval {
 )]
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct AuthorizationApprovalRecorded {
-    pub request_slot: AuthorizationRequestSlot,
-    pub decision: AuthorizationApprovalDecision,
+    pub authorization_request_slot: AuthorizationRequestSlot,
+    pub authorization_approval_decision: AuthorizationApprovalDecision,
 }
 
 #[rustfmt::skip]
@@ -143,8 +143,8 @@ pub struct AuthorizationApprovalRecorded {
 )]
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct RootFoundingAcceptance {
-    pub anchor: RootAnchorDigest,
-    pub cohort: RootGenesis,
+    pub root_anchor_digest: RootAnchorDigest,
+    pub root_genesis: RootGenesis,
 }
 
 #[rustfmt::skip]
@@ -176,7 +176,7 @@ pub enum RootFoundingRejectionReason {
 )]
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct RootFoundingAccepted {
-    pub anchor: RootAnchorDigest,
+    pub root_anchor_digest: RootAnchorDigest,
     pub founding_signature: FoundingSignature,
 }
 
@@ -232,9 +232,9 @@ pub enum RootFoundingState {
 )]
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct PendingFounding {
-    pub anchor: RootAnchorDigest,
-    pub cohort: RootGenesis,
-    pub initiator: Identity,
+    pub root_anchor_digest: RootAnchorDigest,
+    pub root_genesis: RootGenesis,
+    pub identity: Identity,
 }
 
 #[rustfmt::skip]
@@ -244,8 +244,8 @@ pub struct PendingFounding {
 )]
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct RootFoundingStatus {
-    pub state: RootFoundingState,
-    pub pending: Vec<PendingFounding>,
+    pub root_founding_state: RootFoundingState,
+    pub pending_founding_vector: Vec<PendingFounding>,
 }
 
 #[rustfmt::skip]
@@ -345,8 +345,8 @@ pub enum UnimplementedReason {
 )]
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct RequestUnimplemented {
-    pub operation: OperationKind,
-    pub reason: UnimplementedReason,
+    pub operation_kind: OperationKind,
+    pub unimplemented_reason: UnimplementedReason,
 }
 
 #[rustfmt::skip]
