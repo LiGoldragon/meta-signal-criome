@@ -1,14 +1,9 @@
-You MUST read `/home/li/primary/repos/lore/AGENTS.md` - the canonical agent
-contract.
-
 Repo role: meta-only wire contract for privileged `criome` daemon
 configuration.
 
 Required local reading:
 
 - `ARCHITECTURE.md` first.
-- `/home/li/primary/skills/contract-repo.md`.
-- `/home/li/primary/skills/component-triad.md`.
 
 Contract discipline:
 
