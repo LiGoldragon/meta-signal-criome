@@ -24,12 +24,12 @@ impl SchemaBuild {
         CargoSchemaMetadata::new("meta-signal-criome").emit_schema_directory(&self.crate_root);
 
         let ordinary_signal =
-            DependencySchema::from_cargo_metadata("signal-criome", "signal-criome", "0.4.0")
+            DependencySchema::from_cargo_metadata("signal-criome", "signal-criome", "0.7.0")
                 .expect("read signal-criome schema metadata")
                 .expect("signal-criome schema directory exposed via DEP_SIGNAL_CRIOME_SCHEMA_DIR");
 
         GenerationDriver::new(
-            GenerationPlan::wire_contract(&self.crate_root, "meta-signal-criome", "0.3.0")
+            GenerationPlan::wire_contract(&self.crate_root, "meta-signal-criome", "0.5.0")
                 .with_dependency_schema(ordinary_signal),
         )
         .generate()

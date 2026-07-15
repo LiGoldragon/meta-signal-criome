@@ -281,16 +281,6 @@ pub struct InterceptPolicyStreamToken(String);
     feature = "nota-text",
     derive(nota::NotaDecode, nota::NotaDecodeTraced, nota::NotaEncode)
 )]
-#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
-pub enum MetaEvent {
-    InterceptPolicyChanged(InterceptPolicyChange),
-}
-
-#[rustfmt::skip]
-#[cfg_attr(
-    feature = "nota-text",
-    derive(nota::NotaDecode, nota::NotaDecodeTraced, nota::NotaEncode)
-)]
 #[derive(
     rkyv::Archive,
     rkyv::Serialize,
@@ -379,7 +369,7 @@ pub enum Input {
 )]
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum Output {
-    Configured(Configured),
+    ConfigurationApplied(Configured),
     InterceptPolicyCreated(InterceptPolicy),
     InterceptPolicyReplaced(InterceptPolicy),
     InterceptPolicyCancelled(InterceptPolicyIdentifier),
@@ -388,13 +378,13 @@ pub enum Output {
     InterceptPolicyObservationRetracted(InterceptPolicyStreamToken),
     ParkedRequestsFetched(ParkedRequestSnapshot),
     ParkedRequestAnswered(ParkedRequestResolution),
-    ParkedAuthorizationSnapshot(ParkedAuthorizationSnapshot),
-    AuthorizationApprovalRecorded(AuthorizationApprovalRecorded),
-    ConfigurationRejected(ConfigurationRejected),
-    RequestUnimplemented(RequestUnimplemented),
-    RootFoundingAccepted(RootFoundingAccepted),
-    RootFoundingRejected(RootFoundingRejected),
-    RootFoundingStatus(RootFoundingStatus),
+    ParkedAuthorizations(ParkedAuthorizationSnapshot),
+    AuthorizationApprovalStored(AuthorizationApprovalRecorded),
+    ConfigurationRefused(ConfigurationRejected),
+    OperationUnimplemented(RequestUnimplemented),
+    RootFoundingConfirmed(RootFoundingAccepted),
+    RootFoundingRefused(RootFoundingRejected),
+    RootFoundingObserved(RootFoundingStatus),
 }
 
 #[rustfmt::skip]
@@ -525,13 +515,6 @@ impl InterceptPolicyChange {
 }
 
 #[rustfmt::skip]
-impl MetaEvent {
-    pub fn intercept_policy_changed(payload: InterceptPolicyChange) -> Self {
-        Self::InterceptPolicyChanged(payload)
-    }
-}
-
-#[rustfmt::skip]
 impl Input {
     pub fn configure(payload: CriomeDaemonConfiguration) -> Self {
         Self::Configure(payload)
@@ -581,8 +564,8 @@ impl Input {
 
 #[rustfmt::skip]
 impl Output {
-    pub fn configured(payload: ConfigurationGeneration) -> Self {
-        Self::Configured(Configured::new(payload))
+    pub fn configuration_applied(payload: ConfigurationGeneration) -> Self {
+        Self::ConfigurationApplied(Configured::new(payload))
     }
     pub fn intercept_policy_created(payload: InterceptPolicy) -> Self {
         Self::InterceptPolicyCreated(payload)
@@ -612,28 +595,28 @@ impl Output {
     pub fn parked_request_answered(payload: ParkedRequestResolution) -> Self {
         Self::ParkedRequestAnswered(payload)
     }
-    pub fn parked_authorization_snapshot(payload: ParkedAuthorizationSnapshot) -> Self {
-        Self::ParkedAuthorizationSnapshot(payload)
+    pub fn parked_authorizations(payload: ParkedAuthorizationSnapshot) -> Self {
+        Self::ParkedAuthorizations(payload)
     }
-    pub fn authorization_approval_recorded(
+    pub fn authorization_approval_stored(
         payload: AuthorizationApprovalRecorded,
     ) -> Self {
-        Self::AuthorizationApprovalRecorded(payload)
+        Self::AuthorizationApprovalStored(payload)
     }
-    pub fn configuration_rejected(payload: ConfigurationRejectionReason) -> Self {
-        Self::ConfigurationRejected(ConfigurationRejected::new(payload))
+    pub fn configuration_refused(payload: ConfigurationRejectionReason) -> Self {
+        Self::ConfigurationRefused(ConfigurationRejected::new(payload))
     }
-    pub fn request_unimplemented(payload: RequestUnimplemented) -> Self {
-        Self::RequestUnimplemented(payload)
+    pub fn operation_unimplemented(payload: RequestUnimplemented) -> Self {
+        Self::OperationUnimplemented(payload)
     }
-    pub fn root_founding_accepted(payload: RootFoundingAccepted) -> Self {
-        Self::RootFoundingAccepted(payload)
+    pub fn root_founding_confirmed(payload: RootFoundingAccepted) -> Self {
+        Self::RootFoundingConfirmed(payload)
     }
-    pub fn root_founding_rejected(payload: RootFoundingRejectionReason) -> Self {
-        Self::RootFoundingRejected(RootFoundingRejected::new(payload))
+    pub fn root_founding_refused(payload: RootFoundingRejectionReason) -> Self {
+        Self::RootFoundingRefused(RootFoundingRejected::new(payload))
     }
-    pub fn root_founding_status(payload: RootFoundingStatus) -> Self {
-        Self::RootFoundingStatus(payload)
+    pub fn root_founding_observed(payload: RootFoundingStatus) -> Self {
+        Self::RootFoundingObserved(payload)
     }
 }
 
@@ -641,13 +624,6 @@ impl Output {
 impl From<InterceptPolicyIdentifier> for InterceptPolicyChange {
     fn from(payload: InterceptPolicyIdentifier) -> Self {
         Self::Cancelled(payload)
-    }
-}
-
-#[rustfmt::skip]
-impl From<InterceptPolicyChange> for MetaEvent {
-    fn from(payload: InterceptPolicyChange) -> Self {
-        Self::InterceptPolicyChanged(payload)
     }
 }
 
@@ -724,7 +700,7 @@ impl From<RootFoundingObservation> for Input {
 #[rustfmt::skip]
 impl From<Configured> for Output {
     fn from(payload: Configured) -> Self {
-        Self::Configured(payload)
+        Self::ConfigurationApplied(payload)
     }
 }
 
@@ -759,49 +735,49 @@ impl From<ParkedRequestResolution> for Output {
 #[rustfmt::skip]
 impl From<ParkedAuthorizationSnapshot> for Output {
     fn from(payload: ParkedAuthorizationSnapshot) -> Self {
-        Self::ParkedAuthorizationSnapshot(payload)
+        Self::ParkedAuthorizations(payload)
     }
 }
 
 #[rustfmt::skip]
 impl From<AuthorizationApprovalRecorded> for Output {
     fn from(payload: AuthorizationApprovalRecorded) -> Self {
-        Self::AuthorizationApprovalRecorded(payload)
+        Self::AuthorizationApprovalStored(payload)
     }
 }
 
 #[rustfmt::skip]
 impl From<ConfigurationRejected> for Output {
     fn from(payload: ConfigurationRejected) -> Self {
-        Self::ConfigurationRejected(payload)
+        Self::ConfigurationRefused(payload)
     }
 }
 
 #[rustfmt::skip]
 impl From<RequestUnimplemented> for Output {
     fn from(payload: RequestUnimplemented) -> Self {
-        Self::RequestUnimplemented(payload)
+        Self::OperationUnimplemented(payload)
     }
 }
 
 #[rustfmt::skip]
 impl From<RootFoundingAccepted> for Output {
     fn from(payload: RootFoundingAccepted) -> Self {
-        Self::RootFoundingAccepted(payload)
+        Self::RootFoundingConfirmed(payload)
     }
 }
 
 #[rustfmt::skip]
 impl From<RootFoundingRejected> for Output {
     fn from(payload: RootFoundingRejected) -> Self {
-        Self::RootFoundingRejected(payload)
+        Self::RootFoundingRefused(payload)
     }
 }
 
 #[rustfmt::skip]
 impl From<RootFoundingStatus> for Output {
     fn from(payload: RootFoundingStatus) -> Self {
-        Self::RootFoundingStatus(payload)
+        Self::RootFoundingObserved(payload)
     }
 }
 
@@ -853,7 +829,7 @@ pub mod short_header {
     pub const INPUT_ACCEPT_ROOT_FOUNDING: u64 = 0x000B000000000000;
     pub const INPUT_INITIATE_ROOT_FOUNDING: u64 = 0x000C000000000000;
     pub const INPUT_OBSERVE_ROOT_FOUNDING: u64 = 0x000D000000000000;
-    pub const OUTPUT_CONFIGURED: u64 = 0x0100000000000000;
+    pub const OUTPUT_CONFIGURATION_APPLIED: u64 = 0x0100000000000000;
     pub const OUTPUT_INTERCEPT_POLICY_CREATED: u64 = 0x0101000000000000;
     pub const OUTPUT_INTERCEPT_POLICY_REPLACED: u64 = 0x0102000000000000;
     pub const OUTPUT_INTERCEPT_POLICY_CANCELLED: u64 = 0x0103000000000000;
@@ -862,13 +838,13 @@ pub mod short_header {
     pub const OUTPUT_INTERCEPT_POLICY_OBSERVATION_RETRACTED: u64 = 0x0106000000000000;
     pub const OUTPUT_PARKED_REQUESTS_FETCHED: u64 = 0x0107000000000000;
     pub const OUTPUT_PARKED_REQUEST_ANSWERED: u64 = 0x0108000000000000;
-    pub const OUTPUT_PARKED_AUTHORIZATION_SNAPSHOT: u64 = 0x0109000000000000;
-    pub const OUTPUT_AUTHORIZATION_APPROVAL_RECORDED: u64 = 0x010A000000000000;
-    pub const OUTPUT_CONFIGURATION_REJECTED: u64 = 0x010B000000000000;
-    pub const OUTPUT_REQUEST_UNIMPLEMENTED: u64 = 0x010C000000000000;
-    pub const OUTPUT_ROOT_FOUNDING_ACCEPTED: u64 = 0x010D000000000000;
-    pub const OUTPUT_ROOT_FOUNDING_REJECTED: u64 = 0x010E000000000000;
-    pub const OUTPUT_ROOT_FOUNDING_STATUS: u64 = 0x010F000000000000;
+    pub const OUTPUT_PARKED_AUTHORIZATIONS: u64 = 0x0109000000000000;
+    pub const OUTPUT_AUTHORIZATION_APPROVAL_STORED: u64 = 0x010A000000000000;
+    pub const OUTPUT_CONFIGURATION_REFUSED: u64 = 0x010B000000000000;
+    pub const OUTPUT_OPERATION_UNIMPLEMENTED: u64 = 0x010C000000000000;
+    pub const OUTPUT_ROOT_FOUNDING_CONFIRMED: u64 = 0x010D000000000000;
+    pub const OUTPUT_ROOT_FOUNDING_REFUSED: u64 = 0x010E000000000000;
+    pub const OUTPUT_ROOT_FOUNDING_OBSERVED: u64 = 0x010F000000000000;
 }
 
 #[rustfmt::skip]
@@ -954,7 +930,7 @@ pub enum InputRoute {
     Eq,
 )]
 pub enum OutputRoute {
-    Configured,
+    ConfigurationApplied,
     InterceptPolicyCreated,
     InterceptPolicyReplaced,
     InterceptPolicyCancelled,
@@ -963,13 +939,13 @@ pub enum OutputRoute {
     InterceptPolicyObservationRetracted,
     ParkedRequestsFetched,
     ParkedRequestAnswered,
-    ParkedAuthorizationSnapshot,
-    AuthorizationApprovalRecorded,
-    ConfigurationRejected,
-    RequestUnimplemented,
-    RootFoundingAccepted,
-    RootFoundingRejected,
-    RootFoundingStatus,
+    ParkedAuthorizations,
+    AuthorizationApprovalStored,
+    ConfigurationRefused,
+    OperationUnimplemented,
+    RootFoundingConfirmed,
+    RootFoundingRefused,
+    RootFoundingObserved,
 }
 
 #[rustfmt::skip]
@@ -1118,7 +1094,7 @@ impl Input {
 impl Output {
     pub fn route(&self) -> OutputRoute {
         match self {
-            Self::Configured(_) => OutputRoute::Configured,
+            Self::ConfigurationApplied(_) => OutputRoute::ConfigurationApplied,
             Self::InterceptPolicyCreated(_) => OutputRoute::InterceptPolicyCreated,
             Self::InterceptPolicyReplaced(_) => OutputRoute::InterceptPolicyReplaced,
             Self::InterceptPolicyCancelled(_) => OutputRoute::InterceptPolicyCancelled,
@@ -1131,22 +1107,20 @@ impl Output {
             }
             Self::ParkedRequestsFetched(_) => OutputRoute::ParkedRequestsFetched,
             Self::ParkedRequestAnswered(_) => OutputRoute::ParkedRequestAnswered,
-            Self::ParkedAuthorizationSnapshot(_) => {
-                OutputRoute::ParkedAuthorizationSnapshot
+            Self::ParkedAuthorizations(_) => OutputRoute::ParkedAuthorizations,
+            Self::AuthorizationApprovalStored(_) => {
+                OutputRoute::AuthorizationApprovalStored
             }
-            Self::AuthorizationApprovalRecorded(_) => {
-                OutputRoute::AuthorizationApprovalRecorded
-            }
-            Self::ConfigurationRejected(_) => OutputRoute::ConfigurationRejected,
-            Self::RequestUnimplemented(_) => OutputRoute::RequestUnimplemented,
-            Self::RootFoundingAccepted(_) => OutputRoute::RootFoundingAccepted,
-            Self::RootFoundingRejected(_) => OutputRoute::RootFoundingRejected,
-            Self::RootFoundingStatus(_) => OutputRoute::RootFoundingStatus,
+            Self::ConfigurationRefused(_) => OutputRoute::ConfigurationRefused,
+            Self::OperationUnimplemented(_) => OutputRoute::OperationUnimplemented,
+            Self::RootFoundingConfirmed(_) => OutputRoute::RootFoundingConfirmed,
+            Self::RootFoundingRefused(_) => OutputRoute::RootFoundingRefused,
+            Self::RootFoundingObserved(_) => OutputRoute::RootFoundingObserved,
         }
     }
     pub fn short_header(&self) -> u64 {
         match self {
-            Self::Configured(_) => short_header::OUTPUT_CONFIGURED,
+            Self::ConfigurationApplied(_) => short_header::OUTPUT_CONFIGURATION_APPLIED,
             Self::InterceptPolicyCreated(_) => {
                 short_header::OUTPUT_INTERCEPT_POLICY_CREATED
             }
@@ -1171,24 +1145,28 @@ impl Output {
             Self::ParkedRequestAnswered(_) => {
                 short_header::OUTPUT_PARKED_REQUEST_ANSWERED
             }
-            Self::ParkedAuthorizationSnapshot(_) => {
-                short_header::OUTPUT_PARKED_AUTHORIZATION_SNAPSHOT
+            Self::ParkedAuthorizations(_) => short_header::OUTPUT_PARKED_AUTHORIZATIONS,
+            Self::AuthorizationApprovalStored(_) => {
+                short_header::OUTPUT_AUTHORIZATION_APPROVAL_STORED
             }
-            Self::AuthorizationApprovalRecorded(_) => {
-                short_header::OUTPUT_AUTHORIZATION_APPROVAL_RECORDED
+            Self::ConfigurationRefused(_) => short_header::OUTPUT_CONFIGURATION_REFUSED,
+            Self::OperationUnimplemented(_) => {
+                short_header::OUTPUT_OPERATION_UNIMPLEMENTED
             }
-            Self::ConfigurationRejected(_) => short_header::OUTPUT_CONFIGURATION_REJECTED,
-            Self::RequestUnimplemented(_) => short_header::OUTPUT_REQUEST_UNIMPLEMENTED,
-            Self::RootFoundingAccepted(_) => short_header::OUTPUT_ROOT_FOUNDING_ACCEPTED,
-            Self::RootFoundingRejected(_) => short_header::OUTPUT_ROOT_FOUNDING_REJECTED,
-            Self::RootFoundingStatus(_) => short_header::OUTPUT_ROOT_FOUNDING_STATUS,
+            Self::RootFoundingConfirmed(_) => {
+                short_header::OUTPUT_ROOT_FOUNDING_CONFIRMED
+            }
+            Self::RootFoundingRefused(_) => short_header::OUTPUT_ROOT_FOUNDING_REFUSED,
+            Self::RootFoundingObserved(_) => short_header::OUTPUT_ROOT_FOUNDING_OBSERVED,
         }
     }
     pub fn route_from_short_header(
         header: u64,
     ) -> Result<OutputRoute, SignalFrameError> {
         match header {
-            short_header::OUTPUT_CONFIGURED => Ok(OutputRoute::Configured),
+            short_header::OUTPUT_CONFIGURATION_APPLIED => {
+                Ok(OutputRoute::ConfigurationApplied)
+            }
             short_header::OUTPUT_INTERCEPT_POLICY_CREATED => {
                 Ok(OutputRoute::InterceptPolicyCreated)
             }
@@ -1213,26 +1191,26 @@ impl Output {
             short_header::OUTPUT_PARKED_REQUEST_ANSWERED => {
                 Ok(OutputRoute::ParkedRequestAnswered)
             }
-            short_header::OUTPUT_PARKED_AUTHORIZATION_SNAPSHOT => {
-                Ok(OutputRoute::ParkedAuthorizationSnapshot)
+            short_header::OUTPUT_PARKED_AUTHORIZATIONS => {
+                Ok(OutputRoute::ParkedAuthorizations)
             }
-            short_header::OUTPUT_AUTHORIZATION_APPROVAL_RECORDED => {
-                Ok(OutputRoute::AuthorizationApprovalRecorded)
+            short_header::OUTPUT_AUTHORIZATION_APPROVAL_STORED => {
+                Ok(OutputRoute::AuthorizationApprovalStored)
             }
-            short_header::OUTPUT_CONFIGURATION_REJECTED => {
-                Ok(OutputRoute::ConfigurationRejected)
+            short_header::OUTPUT_CONFIGURATION_REFUSED => {
+                Ok(OutputRoute::ConfigurationRefused)
             }
-            short_header::OUTPUT_REQUEST_UNIMPLEMENTED => {
-                Ok(OutputRoute::RequestUnimplemented)
+            short_header::OUTPUT_OPERATION_UNIMPLEMENTED => {
+                Ok(OutputRoute::OperationUnimplemented)
             }
-            short_header::OUTPUT_ROOT_FOUNDING_ACCEPTED => {
-                Ok(OutputRoute::RootFoundingAccepted)
+            short_header::OUTPUT_ROOT_FOUNDING_CONFIRMED => {
+                Ok(OutputRoute::RootFoundingConfirmed)
             }
-            short_header::OUTPUT_ROOT_FOUNDING_REJECTED => {
-                Ok(OutputRoute::RootFoundingRejected)
+            short_header::OUTPUT_ROOT_FOUNDING_REFUSED => {
+                Ok(OutputRoute::RootFoundingRefused)
             }
-            short_header::OUTPUT_ROOT_FOUNDING_STATUS => {
-                Ok(OutputRoute::RootFoundingStatus)
+            short_header::OUTPUT_ROOT_FOUNDING_OBSERVED => {
+                Ok(OutputRoute::RootFoundingObserved)
             }
             _ => {
                 Err(SignalFrameError::UnknownHeader {

@@ -1,197 +1,31 @@
-;; meta-signal-criome — meta-only authority/configuration wire
-;; contract for the criome daemon.
-;;
-;; Wire-only: emits the rkyv + optional NOTA codec and the
-;; signal-frame request/reply envelope. Ordinary trust traffic stays in
-;; signal-criome; daemon runtime, sockets, actors, and storage stay in
-;; criome.
-;;
-;; SHARED-TYPE OWNERSHIP. The daemon startup configuration is defined
-;; once in the ordinary signal-criome contract and cross-imported here
-;; with the single-colon path form signal-criome:lib:TypeName. Startup
-;; and meta reconfiguration therefore share one type identity.
-
 {
-  CriomeDaemonConfiguration signal-criome:lib:CriomeDaemonConfiguration
-  AuthorizationRequestSlot signal-criome:lib:AuthorizationRequestSlot
-  ParkedAuthorizationObservation signal-criome:lib:ParkedAuthorizationObservation
-  ParkedAuthorizationSnapshot signal-criome:lib:ParkedAuthorizationSnapshot
-  InterceptPolicyIdentifier signal-criome:lib:InterceptPolicyIdentifier
-  InterceptPolicyProposal signal-criome:lib:InterceptPolicyProposal
-  InterceptPolicy signal-criome:lib:InterceptPolicy
-  ActiveInterceptPolicies signal-criome:lib:ActiveInterceptPolicies
-  InterceptPolicyCancellation signal-criome:lib:InterceptPolicyCancellation
-  ParkedRequestQuery signal-criome:lib:ParkedRequestQuery
-  ParkedRequestSnapshot signal-criome:lib:ParkedRequestSnapshot
-  ParkedRequestAnswer signal-criome:lib:ParkedRequestAnswer
-  ParkedRequestResolution signal-criome:lib:ParkedRequestResolution
-  RootAnchorDigest signal-criome:lib:RootAnchorDigest
-  RootGenesis signal-criome:lib:RootGenesis
-  FoundingSignature signal-criome:lib:FoundingSignature
-  Identity signal-criome:lib:Identity
+  signal-criome.lib.[CriomeDaemonConfiguration AuthorizationRequestSlot ParkedAuthorizationObservation ParkedAuthorizationSnapshot InterceptPolicyIdentifier InterceptPolicyProposal InterceptPolicy ActiveInterceptPolicies InterceptPolicyCancellation ParkedRequestQuery ParkedRequestSnapshot ParkedRequestAnswer ParkedRequestResolution RootAnchorDigest RootGenesis FoundingSignature Identity]
 }
-[(Configure CriomeDaemonConfiguration)
- (CreateInterceptPolicy InterceptPolicyProposal)
- (ReplaceInterceptPolicy InterceptPolicyProposal)
- (CancelInterceptPolicy InterceptPolicyCancellation)
- (ListInterceptPolicies InterceptPolicyObservation)
- (ObserveInterceptPolicies InterceptPolicyObservation opens InterceptPolicyStream)
- (RetractInterceptPolicyObservation InterceptPolicyStreamToken)
- (FetchParkedRequests ParkedRequestQuery)
- (AnswerParkedRequest ParkedRequestAnswer)
- (ObserveParkedAuthorizations ParkedAuthorizationObservation)
- (SubmitAuthorizationApproval AuthorizationApproval)
- (AcceptRootFounding RootFoundingAcceptance)
- (InitiateRootFounding RootFoundingInitiation)
- (ObserveRootFounding RootFoundingObservation)]
-[(Configured Configured)
- (InterceptPolicyCreated InterceptPolicy)
- (InterceptPolicyReplaced InterceptPolicy)
- (InterceptPolicyCancelled InterceptPolicyIdentifier)
- (InterceptPoliciesListed ActiveInterceptPolicies)
- (InterceptPolicyObservationOpened ActiveInterceptPolicies)
- (InterceptPolicyObservationRetracted InterceptPolicyStreamToken)
- (ParkedRequestsFetched ParkedRequestSnapshot)
- (ParkedRequestAnswered ParkedRequestResolution)
- (ParkedAuthorizationSnapshot ParkedAuthorizationSnapshot)
- (AuthorizationApprovalRecorded AuthorizationApprovalRecorded)
- (ConfigurationRejected ConfigurationRejected)
- (RequestUnimplemented RequestUnimplemented)
- (RootFoundingAccepted RootFoundingAccepted)
- (RootFoundingRejected RootFoundingRejected)
- (RootFoundingStatus RootFoundingStatus)]
+[Configure.CriomeDaemonConfiguration CreateInterceptPolicy.InterceptPolicyProposal ReplaceInterceptPolicy.InterceptPolicyProposal CancelInterceptPolicy.InterceptPolicyCancellation ListInterceptPolicies.InterceptPolicyObservation ObserveInterceptPolicies.InterceptPolicyObservation RetractInterceptPolicyObservation.InterceptPolicyStreamToken FetchParkedRequests.ParkedRequestQuery AnswerParkedRequest.ParkedRequestAnswer ObserveParkedAuthorizations.ParkedAuthorizationObservation SubmitAuthorizationApproval.AuthorizationApproval AcceptRootFounding.RootFoundingAcceptance InitiateRootFounding.RootFoundingInitiation ObserveRootFounding.RootFoundingObservation]
+[ConfigurationApplied.Configured InterceptPolicyCreated.InterceptPolicy InterceptPolicyReplaced.InterceptPolicy InterceptPolicyCancelled.InterceptPolicyIdentifier InterceptPoliciesListed.ActiveInterceptPolicies InterceptPolicyObservationOpened.ActiveInterceptPolicies InterceptPolicyObservationRetracted.InterceptPolicyStreamToken ParkedRequestsFetched.ParkedRequestSnapshot ParkedRequestAnswered.ParkedRequestResolution ParkedAuthorizations.ParkedAuthorizationSnapshot AuthorizationApprovalStored.AuthorizationApprovalRecorded ConfigurationRefused.ConfigurationRejected OperationUnimplemented.RequestUnimplemented RootFoundingConfirmed.RootFoundingAccepted RootFoundingRefused.RootFoundingRejected RootFoundingObserved.RootFoundingStatus]
 {
-  ConfigurationGeneration Integer
-
-  Configured {
-    ConfigurationGeneration
-  }
-
-  ConfigurationRejectionReason [
-    ManagerAuthorityRequired
-    MalformedConfiguration
-    StoreUnavailable
-  ]
-  ConfigurationRejected {
-    ConfigurationRejectionReason
-  }
-
-  AuthorizationApprovalDecision [
-    Approve
-    Reject
-    Defer
-  ]
-  AuthorizationApproval {
-    AuthorizationRequestSlot
-    AuthorizationApprovalDecision
-  }
-  AuthorizationApprovalRecorded {
-    AuthorizationRequestSlot
-    AuthorizationApprovalDecision
-  }
-
-  ;; ─── Root founding (owner-only, explicit, no auto-approval) ───────
-  ;;
-  ;; The owner explicitly founds this node's root by accepting the exact
-  ;; cohort it was configured to found. `anchor` is the self-certifying
-  ;; RootAnchorDigest (blake3(rkyv(RootGenesis))); `cohort` is the full
-  ;; RootGenesis so the daemon re-derives and matches the anchor before
-  ;; its master key emits an ATTACHED FoundingSignature. There is no
-  ;; auto-approval anywhere — acceptance is this explicit owner action.
-  RootFoundingAcceptance {
-    RootAnchorDigest
-    RootGenesis
-  }
-
-  RootFoundingRejectionReason [
-    CohortMismatch
-    AlreadyFounded
-    ManagerAuthorityRequired
-    MalformedGenesis
-  ]
-
-  RootFoundingAccepted {
-    RootAnchorDigest
-    FoundingSignature
-  }
-
-  RootFoundingRejected {
-    RootFoundingRejectionReason
-  }
-
-  ;; ─── Cross-node founding (owner-driven, over the router) ──────────
-  ;;
-  ;; The owner initiates a multi-node founding on ONE node (the
-  ;; initiator) by handing it the full cohort; the daemon conveys a
-  ;; founding Proposal to each peer over the router and records the
-  ;; gathering. Each owner then explicitly accepts on their own node
-  ;; (AcceptRootFounding, above), which returns that node's signature to
-  ;; the initiator until the cohort is unanimous and the finished root is
-  ;; distributed. ObserveRootFounding surfaces this node's founding state
-  ;; and the pending-founding queue so the operator knows what awaits an
-  ;; accept and which anchor to accept.
-  RootFoundingInitiation {
-    RootGenesis
-  }
-
-  RootFoundingObservation { }
-
-  ;; This node's own founding progress, derived from its single founded
-  ;; record: no record yet, gathering signatures, or unanimous (founded).
-  RootFoundingState [
-    Unfounded
-    Gathering
-    Founded
-  ]
-
-  ;; One founding awaiting an explicit owner accept on this node. `cohort`
-  ;; carries the full self-certifying RootGenesis so the owner can accept
-  ;; by anchor alone; `initiator` is the node that proposed it (this node
-  ;; itself for a locally initiated founding).
-  PendingFounding {
-    RootAnchorDigest
-    RootGenesis
-    Identity
-  }
-
-  RootFoundingStatus {
-    RootFoundingState
-    (Vector PendingFounding)
-  }
-
-  InterceptPolicyObservation { }
-
-  InterceptPolicyChange [
-    (Created InterceptPolicy)
-    (Replaced InterceptPolicy)
-    (Cancelled InterceptPolicyIdentifier)
-  ]
-
-  InterceptPolicyStreamToken String
-  MetaEvent [
-    (InterceptPolicyChanged InterceptPolicyChange belongs InterceptPolicyStream)
-  ]
-  InterceptPolicyStream (Stream { token.InterceptPolicyStreamToken opened.ActiveInterceptPolicies event.MetaEvent close.InterceptPolicyStreamToken })
-
-  OperationKind [
-    Configure
-    CreateInterceptPolicy
-    ReplaceInterceptPolicy
-    CancelInterceptPolicy
-    ListInterceptPolicies
-    ObserveInterceptPolicies
-    RetractInterceptPolicyObservation
-    FetchParkedRequests
-    AnswerParkedRequest
-    ObserveParkedAuthorizations
-    SubmitAuthorizationApproval
-    AcceptRootFounding
-    InitiateRootFounding
-    ObserveRootFounding
-  ]
-  UnimplementedReason [NotBuiltYet DependencyNotReady]
-  RequestUnimplemented {
-    OperationKind
-    UnimplementedReason
-  }
+  ConfigurationGeneration.Integer
+  Configured.{ ConfigurationGeneration }
+  ConfigurationRejectionReason.[ManagerAuthorityRequired MalformedConfiguration StoreUnavailable]
+  ConfigurationRejected.{ ConfigurationRejectionReason }
+  AuthorizationApprovalDecision.[Approve Reject Defer]
+  AuthorizationApproval.{ AuthorizationRequestSlot AuthorizationApprovalDecision }
+  AuthorizationApprovalRecorded.{ AuthorizationRequestSlot AuthorizationApprovalDecision }
+  RootFoundingAcceptance.{ RootAnchorDigest RootGenesis }
+  RootFoundingRejectionReason.[CohortMismatch AlreadyFounded ManagerAuthorityRequired MalformedGenesis]
+  RootFoundingAccepted.{ RootAnchorDigest FoundingSignature }
+  RootFoundingRejected.{ RootFoundingRejectionReason }
+  RootFoundingInitiation.{ RootGenesis }
+  RootFoundingObservation.{  }
+  RootFoundingState.[Unfounded Gathering Founded]
+  PendingFounding.{ RootAnchorDigest RootGenesis Identity }
+  RootFoundingStatus.{ RootFoundingState Vector.PendingFounding }
+  InterceptPolicyObservation.{  }
+  InterceptPolicyChange.[Created.InterceptPolicy Replaced.InterceptPolicy Cancelled.InterceptPolicyIdentifier]
+  InterceptPolicyStreamToken.String
+  OperationKind.[Configure CreateInterceptPolicy ReplaceInterceptPolicy CancelInterceptPolicy ListInterceptPolicies ObserveInterceptPolicies RetractInterceptPolicyObservation FetchParkedRequests AnswerParkedRequest ObserveParkedAuthorizations SubmitAuthorizationApproval AcceptRootFounding InitiateRootFounding ObserveRootFounding]
+  UnimplementedReason.[NotBuiltYet DependencyNotReady]
+  RequestUnimplemented.{ OperationKind UnimplementedReason }
 }
+{}
+{}

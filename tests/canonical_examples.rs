@@ -67,7 +67,7 @@ fn founding_member(name: &str) -> FoundingMember {
 
 fn root_genesis() -> RootGenesis {
     RootGenesis::new(
-        Contract::root(Rule::threshold(Threshold::new(
+        Contract::root(Rule::threshold_rule(Threshold::new(
             RequiredSignatureThreshold::new(2),
             vec![
                 PolicyMember::key_member(Identity::Host(PrincipalName::new("mirror-alpha"))),
@@ -144,32 +144,34 @@ fn canonical_input_examples_round_trip() {
 
 #[test]
 fn canonical_output_examples_round_trip() {
-    round_trip(Output::Configured(ConfigurationGeneration::new(7).into()));
-    round_trip(Output::ParkedAuthorizationSnapshot(
+    round_trip(Output::ConfigurationApplied(
+        ConfigurationGeneration::new(7).into(),
+    ));
+    round_trip(Output::ParkedAuthorizations(
         ParkedAuthorizationSnapshot::from_parked(vec![ParkedAuthorization::from_evaluation(
             request_slot(),
             evaluation(),
         )]),
     ));
-    round_trip(Output::AuthorizationApprovalRecorded(
+    round_trip(Output::AuthorizationApprovalStored(
         AuthorizationApprovalRecorded {
             authorization_request_slot: request_slot(),
             authorization_approval_decision: AuthorizationApprovalDecision::Approve,
         },
     ));
-    round_trip(Output::ConfigurationRejected(ConfigurationRejected::new(
+    round_trip(Output::ConfigurationRefused(ConfigurationRejected::new(
         ConfigurationRejectionReason::ManagerAuthorityRequired,
     )));
-    round_trip(Output::RequestUnimplemented(RequestUnimplemented {
+    round_trip(Output::OperationUnimplemented(RequestUnimplemented {
         operation_kind: OperationKind::Configure,
         unimplemented_reason: UnimplementedReason::DependencyNotReady,
     }));
-    round_trip(Output::RootFoundingAccepted(RootFoundingAccepted::new(
+    round_trip(Output::RootFoundingConfirmed(RootFoundingAccepted::new(
         root_anchor(),
         founding_signature(),
     )));
-    round_trip(Output::RootFoundingRejected(RootFoundingRejected::new(
+    round_trip(Output::RootFoundingRefused(RootFoundingRejected::new(
         RootFoundingRejectionReason::CohortMismatch,
     )));
-    round_trip(Output::RootFoundingStatus(root_founding_status()));
+    round_trip(Output::RootFoundingObserved(root_founding_status()));
 }

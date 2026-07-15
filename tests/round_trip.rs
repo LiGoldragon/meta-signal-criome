@@ -52,7 +52,7 @@ fn founding_member(name: &str) -> FoundingMember {
 
 fn root_genesis() -> RootGenesis {
     RootGenesis::new(
-        Contract::root(Rule::threshold(Threshold::new(
+        Contract::root(Rule::threshold_rule(Threshold::new(
             RequiredSignatureThreshold::new(2),
             vec![
                 PolicyMember::key_member(Identity::Host(PrincipalName::new("mirror-alpha"))),
@@ -308,7 +308,7 @@ fn intercept_policy_owner_requests_round_trip() {
 #[test]
 fn reply_variants_round_trip() {
     let replies = [
-        Output::configured(ConfigurationGeneration::new(7)),
+        Output::configuration_applied(ConfigurationGeneration::new(7)),
         Output::InterceptPolicyCreated(intercept_policy()),
         Output::InterceptPolicyReplaced(intercept_policy()),
         Output::InterceptPolicyCancelled(intercept_policy_identifier()),
@@ -319,17 +319,17 @@ fn reply_variants_round_trip() {
         )),
         Output::ParkedRequestsFetched(parked_request_snapshot()),
         Output::ParkedRequestAnswered(parked_request_resolution()),
-        Output::parked_authorization_snapshot(ParkedAuthorizationSnapshot::from_parked(vec![
+        Output::parked_authorizations(ParkedAuthorizationSnapshot::from_parked(vec![
             ParkedAuthorization::from_evaluation(request_slot(), evaluation()),
         ])),
-        Output::authorization_approval_recorded(AuthorizationApprovalRecorded {
+        Output::authorization_approval_stored(AuthorizationApprovalRecorded {
             authorization_request_slot: request_slot(),
             authorization_approval_decision: AuthorizationApprovalDecision::Approve,
         }),
-        Output::ConfigurationRejected(ConfigurationRejected::new(
+        Output::ConfigurationRefused(ConfigurationRejected::new(
             ConfigurationRejectionReason::ManagerAuthorityRequired,
         )),
-        Output::RequestUnimplemented(RequestUnimplemented {
+        Output::OperationUnimplemented(RequestUnimplemented {
             operation_kind: OperationKind::Configure,
             unimplemented_reason: UnimplementedReason::DependencyNotReady,
         }),
@@ -353,7 +353,7 @@ fn cross_node_founding_meta_ops_round_trip() {
         assert_nota_round_trips(&request);
     }
 
-    let reply = Output::RootFoundingStatus(root_founding_status());
+    let reply = Output::RootFoundingObserved(root_founding_status());
     assert_reply_round_trips(reply.clone());
     #[cfg(feature = "nota-text")]
     assert_nota_round_trips(&reply);

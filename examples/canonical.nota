@@ -13,34 +13,34 @@
 (SubmitAuthorizationApproval (authorization-request-1 Approve))
 
 ;; Input::AcceptRootFounding
-(AcceptRootFounding (root-anchor-1 (((Threshold (2 [(KeyMember (Host mirror-alpha)) (KeyMember (Host mirror-beta))])) Root) [((Host mirror-alpha) mirror-alpha-master-pubkey) ((Host mirror-beta) mirror-beta-master-pubkey)] CriomeRootFoundingV1 genesis-nonce-1)))
+(AcceptRootFounding (root-anchor-1 (((ThresholdRule (2 [(KeyMember (Host mirror-alpha)) (KeyMember (Host mirror-beta))])) Root) [((Host mirror-alpha) mirror-alpha-master-pubkey) ((Host mirror-beta) mirror-beta-master-pubkey)] CriomeRootFoundingV1 genesis-nonce-1)))
 
 ;; Input::InitiateRootFounding — the owner hands the initiator the full cohort
-(InitiateRootFounding (((Threshold (2 [(KeyMember (Host mirror-alpha)) (KeyMember (Host mirror-beta))])) Root) [((Host mirror-alpha) mirror-alpha-master-pubkey) ((Host mirror-beta) mirror-beta-master-pubkey)] CriomeRootFoundingV1 genesis-nonce-1))
+(InitiateRootFounding (((ThresholdRule (2 [(KeyMember (Host mirror-alpha)) (KeyMember (Host mirror-beta))])) Root) [((Host mirror-alpha) mirror-alpha-master-pubkey) ((Host mirror-beta) mirror-beta-master-pubkey)] CriomeRootFoundingV1 genesis-nonce-1))
 
 ;; Input::ObserveRootFounding
 (ObserveRootFounding ())
 
-;; Output::Configured
-(Configured 7)
+;; Output::ConfigurationApplied
+(ConfigurationApplied 7)
 
-;; Output::ParkedAuthorizationSnapshot
-(ParkedAuthorizationSnapshot [(authorization-request-1 (Some (contract-digest-1 (Spirit operation-digest-1 Head) (Spirit operation-digest-1 (((10 20) 1 []) []) [] [] [] []))) None)])
+;; Output::ParkedAuthorizations
+(ParkedAuthorizations [(authorization-request-1 (Some (contract-digest-1 (Spirit operation-digest-1 Head) (Spirit operation-digest-1 (((10 20) 1 []) []) [] [] [] []))) None)])
 
-;; Output::AuthorizationApprovalRecorded
-(AuthorizationApprovalRecorded (authorization-request-1 Approve))
+;; Output::AuthorizationApprovalStored
+(AuthorizationApprovalStored (authorization-request-1 Approve))
 
-;; Output::ConfigurationRejected
-(ConfigurationRejected ManagerAuthorityRequired)
+;; Output::ConfigurationRefused
+(ConfigurationRefused ManagerAuthorityRequired)
 
-;; Output::RequestUnimplemented
-(RequestUnimplemented (Configure DependencyNotReady))
+;; Output::OperationUnimplemented
+(OperationUnimplemented (Configure DependencyNotReady))
 
-;; Output::RootFoundingAccepted
-(RootFoundingAccepted (root-anchor-1 ((Host mirror-alpha) (Bls12_381MinPk public-key-1 signature-1))))
+;; Output::RootFoundingConfirmed
+(RootFoundingConfirmed (root-anchor-1 ((Host mirror-alpha) (Bls12_381MinPk public-key-1 signature-1))))
 
-;; Output::RootFoundingRejected
-(RootFoundingRejected CohortMismatch)
+;; Output::RootFoundingRefused
+(RootFoundingRefused CohortMismatch)
 
-;; Output::RootFoundingStatus — founding state + the pending-founding queue
-(RootFoundingStatus (Gathering [(root-anchor-1 (((Threshold (2 [(KeyMember (Host mirror-alpha)) (KeyMember (Host mirror-beta))])) Root) [((Host mirror-alpha) mirror-alpha-master-pubkey) ((Host mirror-beta) mirror-beta-master-pubkey)] CriomeRootFoundingV1 genesis-nonce-1) (Host mirror-alpha))]))
+;; Output::RootFoundingObserved — founding state + the pending-founding queue
+(RootFoundingObserved (Gathering [(root-anchor-1 (((ThresholdRule (2 [(KeyMember (Host mirror-alpha)) (KeyMember (Host mirror-beta))])) Root) [((Host mirror-alpha) mirror-alpha-master-pubkey) ((Host mirror-beta) mirror-beta-master-pubkey)] CriomeRootFoundingV1 genesis-nonce-1) (Host mirror-alpha))]))
