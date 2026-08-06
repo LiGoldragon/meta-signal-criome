@@ -1,17 +1,13 @@
 # meta-signal-criome
 
-Meta signal contract for privileged criome daemon configuration.
+The owner Criome Interface for privileged configuration, policy, parked-request,
+authorization-approval, and founding traffic.
 
-The meta-only wire contract for `criome` - the second leg of the two-contract
-pair (`signal-criome` ordinary + `meta-signal-criome` meta). The meta plane's
-baseline content is daemon configuration: a typed `Configure` operation
-carrying `signal_criome::CriomeDaemonConfiguration` (socket + `criome.sema`
-store location - the same record the daemon decodes at binary startup), with
-`Configured` / `ConfigurationRejected` / `RequestUnimplemented` replies.
+The ethos/interface.ethos file is the sole human-readable structural authority.
+It imports ordinary Criome identities from the exact producer-owned Ethos
+source published by signal-criome. The generated Rust projection exposes only
+authority-encoded coordinates.
 
-`schema/lib.schema` is the source of the wire vocabulary. It cross-imports
-`signal_criome::CriomeDaemonConfiguration`, so startup and meta reconfiguration
-share one configuration type identity.
-
-Default builds are NOTA-free. Enable the `nota-text` feature for CLI/debug
-projection; the wire is binary/rkyv. See `ARCHITECTURE.md`.
+Handwritten Rust supplies the structural codecs, owner request/reply seating,
+and allocated Signal frame boundary that the current bootstrap language cannot
+yet express. Dotos is the optional human/agent text projection.

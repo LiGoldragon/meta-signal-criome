@@ -37,10 +37,10 @@
           ];
           craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
           examplesFilter = path: _type: builtins.match ".*/examples(/.*)?$" path != null;
-          schemaFilter = path: _type: builtins.match ".*/schema(/.*)?$" path != null;
+          ethosFilter = path: _type: builtins.match ".*/ethos(/.*)?$" path != null;
           sourceFilter =
             path: type:
-            (craneLib.filterCargoSources path type) || (examplesFilter path type) || (schemaFilter path type);
+            (craneLib.filterCargoSources path type) || (examplesFilter path type) || (ethosFilter path type);
           src = pkgs.lib.cleanSourceWith {
             src = ./.;
             filter = sourceFilter;
@@ -88,11 +88,11 @@
         {
           build = context.craneLib.cargoBuild (context.commonArgs // { inherit (context) cargoArtifacts; });
           test = context.craneLib.cargoTest (context.commonArgs // { inherit (context) cargoArtifacts; });
-          test-nota-text = context.craneLib.cargoTest (
+          test-dotos-text = context.craneLib.cargoTest (
             context.commonArgs
             // {
               inherit (context) cargoArtifacts;
-              cargoTestExtraArgs = "--features nota-text --all-targets";
+              cargoTestExtraArgs = "--features dotos-text --all-targets";
             }
           );
           test-doc = context.craneLib.cargoTest (
@@ -117,18 +117,18 @@
               cargoClippyExtraArgs = "--all-targets -- -D warnings";
             }
           );
-          clippy-nota-text = context.craneLib.cargoClippy (
+          clippy-dotos-text = context.craneLib.cargoClippy (
             context.commonArgs
             // {
               inherit (context) cargoArtifacts;
-              cargoClippyExtraArgs = "--features nota-text --all-targets -- -D warnings";
+              cargoClippyExtraArgs = "--features dotos-text --all-targets -- -D warnings";
             }
           );
           rkyv-feature-discipline =
             context.pkgs.runCommand "meta-signal-criome-rkyv-feature-discipline" { }
               ''
                 ${context.pkgs.gnugrep}/bin/grep -F \
-                  'rkyv         = { version = "0.8", default-features = false, features = ["std", "bytecheck", "little_endian", "pointer_width_32", "unaligned"] }' \
+                  'rkyv = { version = "0.8", default-features = false, features = ["std", "bytecheck", "little_endian", "pointer_width_32", "unaligned"] }' \
                   ${./Cargo.toml} > /dev/null
                 touch $out
               '';

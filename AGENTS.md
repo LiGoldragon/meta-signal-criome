@@ -1,15 +1,14 @@
-Repo role: meta-only wire contract for privileged `criome` daemon
-configuration.
+Repository role: owner Criome Interface for privileged daemon control.
 
-Required local reading:
+Read ARCHITECTURE.md before editing.
 
-- `ARCHITECTURE.md` first.
-
-Contract discipline:
-
-- Keep default builds NOTA-free; gate human text projection behind
-  `nota-text`.
-- Keep this crate wire-only: no daemon runtime, no actors, no storage, no
-  tokio.
-- Ordinary trust traffic stays in `signal-criome`; this crate carries only
-  meta authority/configuration vocabulary.
+- ethos/interface.ethos is the sole human-readable structural authority.
+- Import shared ordinary identities from the exact signal-criome producer; do
+  not mirror them.
+- Never add a legacy schema source, readable generated Rust layer, or readable
+  aliases for encoded types.
+- Keep local authority and canonical-order seats explicit.
+- Handwritten Rust may supply only behavior the current bootstrap language
+  cannot express.
+- Keep daemon runtime, actors, storage, sockets, private keys, and Tokio out.
+- Keep Dotos optional behind dotos-text.

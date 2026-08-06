@@ -1,82 +1,75 @@
-# meta-signal-criome - architecture
+# meta-signal-criome architecture
 
-`meta-signal-criome` is the meta-only wire contract for privileged
-`criome-daemon` configuration. It is the authority/configuration companion to
-the ordinary `signal-criome` contract.
+## Center
 
-## Role
+This repository owns the owner Criome Interface. It is the privileged relation
+between a Criome daemon and the authority permitted to configure it, mutate
+intercept policy, answer parked work, approve authorization slots, and conduct
+root founding.
 
-The crate defines the meta channel that lets the owning authority configure a
-criome daemon. The baseline operation is `Configure`, carrying
-`signal_criome::CriomeDaemonConfiguration`, the same typed startup record the
-daemon decodes from its binary startup file.
+The Interface is independent of Rust, the current daemon, and the current
+operating system. Rust is one verified bootstrap projection. Beauty and elegant,
+extendable logic win: shared ordinary identities are imported, never mirrored.
 
-## Direction
+## Authority and imports
 
-`meta-signal-criome` is the second leg of the criome contract pair. Every
-Persona component has exactly two contracts: the ordinary `signal-<component>`
-and the meta `meta-signal-<component>`. This repo completes that pair for
-`criome` by giving it the meta authority surface its ordinary contract lacked,
-so the `criome-daemon` has the configuration plane its startup record already
-implies.
+The ethos/interface.ethos file is a strict, role-free Interface transaction.
+Local authority, declaration, variant, and canonical-order seats live explicitly
+in src/bootstrap_manifest.rs. No identity is derived from spelling, order, or
+content hashes.
 
-Possession of this meta socket is the MVP authority boundary for intercept
-policy mutation and parked-request answers. The same owner socket that applies
-daemon configuration also carries policy create/replace/cancel/list/observe,
-parked-request fetch, and parked-request answer; holding the socket is what
-distinguishes the authority caller from an ordinary peer.
+The ordinary producer is pinned exactly at signal-criome commit
+9436a3b8ffc2ee508ee1aaec807f5fe293187d59. During every build, build.rs:
 
-## Owned
+1. locates the producer-owned Ethos directory through Cargo metadata;
+2. proves the located source equals the source compiled into that producer;
+3. admits the selected producer declaration seats into the owner authority;
+4. applies the owner Interface transaction;
+5. verifies the encoded Rust projection byte-for-byte; and
+6. publishes this repository's owned Ethos directory.
 
-- Meta authority wire vocabulary for criome.
-- The `Configure(CriomeDaemonConfiguration)` operation.
-- Intercept-policy owner operations:
-  `CreateInterceptPolicy`, `ReplaceInterceptPolicy`, `CancelInterceptPolicy`,
-  `ListInterceptPolicies`, `ObserveInterceptPolicies`, and
-  `RetractInterceptPolicyObservation`.
-- Parked Spirit request control operations:
-  `FetchParkedRequests` and `AnswerParkedRequest`.
-- The owner-only root-founding accept: `AcceptRootFounding(RootFoundingAcceptance)`
-  — the explicit owner action that founds this node's root (there is no
-  auto-approval). The acceptance carries the self-certifying `RootAnchorDigest`
-  plus the full `RootGenesis` cohort (imported from `signal-criome`) so the daemon
-  re-derives and matches the anchor before its master key emits an attached
-  founding signature. Replies: `RootFoundingAccepted` (the anchor + this node's
-  attached, scheme-tagged `FoundingSignature`) and `RootFoundingRejected`
-  (`CohortMismatch | AlreadyFounded | ManagerAuthorityRequired | MalformedGenesis`).
-- Configuration replies: `Configured`, `ConfigurationRejected`, and
-  `RequestUnimplemented`.
-- Optional NOTA projection behind the `nota-text` feature.
+The generated projection contains encoded local and imported coordinates only.
+There is no legacy schema source, readable generated layer, or readable alias
+layer.
 
-## Not Owned
+## Current bootstrap boundary
 
-- Ordinary criome trust traffic: sign, verify, identity, attestation, and
-  authorization operations live in `signal-criome`.
-- The shared intercept-policy and parked-request records live in
-  `signal-criome`; this contract imports them and exposes the owner/meta
-  authority verbs.
-- Criome daemon state, sockets, actors, and storage live in `criome`.
-- Schema generation machinery lives in `schema` / `schema-rust`.
+The src/schema/lib/behavior.rs file supplies behavior not yet expressible in the
+strict Interface:
 
-## Code Map
+- producer-shared WireShape, WireValue, and rkyv structural behavior;
+- optional Dotos behavior;
+- OwnerRequest and OwnerReply role seating;
+- Signal framing under allocated contract ID 4, wire revision 2.
 
-- `schema/lib.schema` is the source of the meta wire vocabulary.
-- `build.rs` runs `schema-rust` and imports
-  `signal_criome::CriomeDaemonConfiguration` from `signal-criome`.
-- `src/schema/lib.rs` is the checked-in generated artifact.
-- `src/lib.rs` re-exports the generated nouns and keeps only tiny
-  handwritten accessors.
-- `Cargo.toml` keeps `nota-text` optional and pins the rkyv feature set.
-- `flake.nix` builds, tests, formats, documents, and lints the contract in both
-  no-feature and `nota-text` modes.
+The shared representation is owned by signal-criome so imported types and local
+types inhabit one structural wire algebra. When Protos expresses these behavior
+forms, the handwritten layer should shrink without changing the Interface.
 
-## Invariants
+## Domain boundary
 
-- The crate is wire-only: no daemon runtime, no actors, no storage, no tokio.
-- Default builds are NOTA-free.
-- The meta contract reuses `signal_criome::CriomeDaemonConfiguration`; it does
-  not mirror the daemon configuration record.
-- The meta contract reuses `signal_criome` intercept-policy and parked-request
-  records; criome remains the policy-state owner.
-- The implementation is schema-derived `WireContract`; no handwritten
-  `signal_frame::signal_channel!` remains.
+The owner Interface carries:
+
+- daemon configuration;
+- intercept-policy create, replace, cancel, list, observe, and retract;
+- parked Spirit request fetch and answer;
+- parked authorization observation and authorization approval by durable slot;
+- root-founding initiation, observation, explicit acceptance, and typed
+  acceptance/refusal/status replies.
+
+Ordinary sign, verify, identity, attestation, and authorization traffic belongs
+to signal-criome. Daemon execution, persistence, actors, sockets, private keys,
+and policy evaluation belong elsewhere.
+
+## Evidence
+
+- tests/interface_contract.rs proves the owner source imports the producer and
+  that generated local/imported coordinates are encoded.
+- tests/frame.rs proves both owner roles round-trip through binding 4/revision 2.
+- tests/round_trip.rs and tests/canonical_examples.rs prove human Dotos heads
+  survive the encoded Rust projection.
+- tests/dependency_boundary.rs proves exact producer/generator pins and keeps
+  bootstrap and retired crates out of the runtime graph.
+
+Structural changes begin in Ethos, preserve existing seats, mint explicit seats
+only for new identities, regenerate once, and renew all evidence.
