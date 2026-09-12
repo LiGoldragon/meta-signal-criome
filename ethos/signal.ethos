@@ -1,0 +1,63 @@
+; The meta Criome Signal contract: privileged daemon control.
+;
+; Configuration, root founding, authorization approval, and intercept policy
+; administration. The evaluated authorization surface itself is the ordinary
+; contract's.
+Signal
+[ signal_criome:[ ParkedRequestQuery AuthorizationRequestSlot ActiveInterceptPolicies Identity
+                  InterceptPolicy RootGenesis ParkedRequestResolution ParkedAuthorizationSnapshot
+                  RootAnchorDigest CriomeDaemonConfiguration InterceptPolicyProposal
+                  ParkedAuthorizationObservation FoundingSignature ParkedRequestSnapshot
+                  InterceptPolicyIdentifier ParkedRequestAnswer InterceptPolicyCancellation ] ]
+[ ObserveRootFounding.RootFoundingObservation
+  AnswerParkedRequest.ParkedRequestAnswer
+  ObserveInterceptPolicies.InterceptPolicyObservation
+  SubmitAuthorizationApproval.AuthorizationApproval
+  CancelInterceptPolicy.InterceptPolicyCancellation
+  Configure.CriomeDaemonConfiguration
+  ObserveParkedAuthorizations.ParkedAuthorizationObservation
+  ReplaceInterceptPolicy.InterceptPolicyProposal
+  InitiateRootFounding.RootFoundingInitiation
+  CreateInterceptPolicy.InterceptPolicyProposal
+  RetractInterceptPolicyObservation.InterceptPolicyStreamToken
+  AcceptRootFounding.RootFoundingAcceptance
+  FetchParkedRequests.ParkedRequestQuery
+  ListInterceptPolicies.InterceptPolicyObservation ]
+[ RootFoundingRefused.RootFoundingRejected
+  ConfigurationApplied.Configured
+  AuthorizationApprovalStored.AuthorizationApprovalRecorded
+  OperationUnimplemented.RequestUnimplemented
+  InterceptPolicyCancelled.InterceptPolicyIdentifier
+  InterceptPolicyObservationRetracted.InterceptPolicyStreamToken
+  InterceptPoliciesListed.ActiveInterceptPolicies
+  InterceptPolicyReplaced.InterceptPolicy
+  InterceptPolicyObservationOpened.ActiveInterceptPolicies
+  ParkedRequestsFetched.ParkedRequestSnapshot
+  ParkedRequestAnswered.ParkedRequestResolution
+  InterceptPolicyCreated.InterceptPolicy
+  ParkedAuthorizations.ParkedAuthorizationSnapshot
+  ConfigurationRefused.ConfigurationRejected
+  RootFoundingConfirmed.RootFoundingAccepted
+  RootFoundingObserved.RootFoundingStatus ]
+[ ConfigurationGeneration.Integer
+  RootFoundingState.[ Gathering Founded Unfounded ]
+  InterceptPolicyObservation.{}
+  RootFoundingStatus.{ RootFoundingState Vector<PendingFounding> }
+  RootFoundingRejectionReason.[ MalformedGenesis ManagerAuthorityRequired CohortMismatch AlreadyFounded ]
+  RequestUnimplemented.{ OperationKind UnimplementedReason }
+  RootFoundingInitiation.{ RootGenesis }
+  RootFoundingAcceptance.{ RootAnchorDigest RootGenesis }
+  InterceptPolicyStreamToken.String
+  Configured.{ ConfigurationGeneration }
+  AuthorizationApprovalDecision.[ Defer Reject Approve ]
+  AuthorizationApproval.{ AuthorizationRequestSlot AuthorizationApprovalDecision }
+  UnimplementedReason.[ DependencyNotReady NotBuiltYet ]
+  ConfigurationRejected.{ ConfigurationRejectionReason }
+  PendingFounding.{ RootAnchorDigest RootGenesis Identity }
+  RootFoundingAccepted.{ RootAnchorDigest FoundingSignature }
+  AuthorizationApprovalRecorded.{ AuthorizationRequestSlot AuthorizationApprovalDecision }
+  RootFoundingObservation.{}
+  ConfigurationRejectionReason.[ ManagerAuthorityRequired StoreUnavailable MalformedConfiguration ]
+  InterceptPolicyChange.[ Created.InterceptPolicy Replaced.InterceptPolicy Cancelled.InterceptPolicyIdentifier ]
+  OperationKind.[ Configure CreateInterceptPolicy InitiateRootFounding ReplaceInterceptPolicy FetchParkedRequests CancelInterceptPolicy ObserveInterceptPolicies AnswerParkedRequest ObserveRootFounding AcceptRootFounding SubmitAuthorizationApproval RetractInterceptPolicyObservation ObserveParkedAuthorizations ListInterceptPolicies ]
+  RootFoundingRejected.{ RootFoundingRejectionReason } ]

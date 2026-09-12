@@ -1,13 +1,18 @@
 # meta-signal-criome
 
-The owner Criome Interface for privileged configuration, policy, parked-request,
-authorization-approval, and founding traffic.
+The meta Signal contract for Criome: privileged daemon control. Configuration,
+root founding, authorization approval, and intercept-policy administration.
 
-The ethos/interface.ethos file is the sole human-readable structural authority.
-It imports ordinary Criome identities from the exact producer-owned Ethos
-source published by signal-criome. The generated Rust projection exposes only
-authority-encoded coordinates.
+`ethos/signal.ethos` is the schema authority. `build.rs` regenerates the
+projection with `ethos-zero` and asserts it against the committed
+`src/generated/signal.rs`, so the two can never drift.
 
-Handwritten Rust supplies the structural codecs, owner request/reply seating,
-and allocated Signal frame boundary that the current bootstrap language cannot
-yet express. Dotos is the optional human/agent text projection.
+Seventeen names come from `signal-criome` — the genesis, the daemon
+configuration, the intercept-policy shapes, the parked-request shapes. The
+evaluated authorization surface belongs to the ordinary contract; this one
+carries only the owner's control of it.
+
+`examples/canonical.datom` holds one canonical Datom value per line, written
+by the codec and never spelled by hand; `tests/contract.rs` asserts every line
+is exactly what the codec writes and that each actualizes back into exactly
+one of `Query` and `Response`.

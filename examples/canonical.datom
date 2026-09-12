@@ -1,0 +1,17 @@
+; Canonical Datom examples for meta-signal-criome.
+; Written by `rewrite_the_canonical_file`; never spelled by hand.
+
+ObserveRootFounding.{}
+ObserveInterceptPolicies.{}
+Configure.{ /run/criome/data.sock /run/criome/owner.sock None Some.b0b1 ClientApproval Some.Host.prometheus None Some.60000000000 }
+InitiateRootFounding.{ { { SignedBy.Host.prometheus Root } [ { Host.prometheus b0b1 } ] CriomeRootFoundingV1 nonce-1 } }
+AcceptRootFounding.{ «an(h0r» { { SignedBy.Host.prometheus Root } [ { Host.prometheus b0b1 } ] CriomeRootFoundingV1 nonce-1 } }
+SubmitAuthorizationApproval.{ slot-1 Approve }
+RetractInterceptPolicyObservation.stream-1
+ConfigurationApplied.{ 7 }
+ConfigurationRefused.{ ManagerAuthorityRequired }
+OperationUnimplemented.{ AcceptRootFounding NotBuiltYet }
+RootFoundingRefused.{ AlreadyFounded }
+RootFoundingObserved.{ Gathering [ { «an(h0r» { { SignedBy.Host.prometheus Root } [ { Host.prometheus b0b1 } ] CriomeRootFoundingV1 nonce-1 } Cluster.cluster } ] }
+RootFoundingConfirmed.{ «an(h0r» { Host.prometheus { Bls12_381MinPk b0b1 51g1 } } }
+AuthorizationApprovalStored.{ slot-1 Defer }
