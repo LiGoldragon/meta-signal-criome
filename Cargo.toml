@@ -1,6 +1,6 @@
 [package]
 name         = "meta-signal-criome"
-version      = "0.8.0"
+version      = "0.8.1"
 edition      = "2024"
 rust-version = "1.89"
 license      = "MIT OR Apache-2.0"
@@ -29,7 +29,7 @@ thiserror = "2"
 core-ethos = { git = "https://github.com/LiGoldragon/core-ethos.git", rev = "427fd74a8217f557cfabdfe0ff23b784c855bf85" }
 name-table = { git = "https://github.com/LiGoldragon/name-table.git", rev = "a22f48d8040ab9235f3552ad8654ff8e27b8157d" }
 rust-logos = { git = "https://github.com/LiGoldragon/rust-logos.git", rev = "55501fddc2d7e154d71fff1659386cbbba712267" }
-schema-rust = { package = "schema-rust", git = "https://github.com/LiGoldragon/schema-rust.git", rev = "37b7d1035a472a15081f3e2e8a93b95bf733c3ee", default-features = false }
+schema-rust = { package = "schema-rust", git = "https://github.com/LiGoldragon/schema-rust.git", rev = "9e36587c85bd69357e9042729ba2df0052799756", default-features = false }
 sema-translator = { git = "https://github.com/LiGoldragon/sema-translator.git", rev = "6b5499c0d25c801b56582fdcd8e021c3293a6d4d", default-features = false, features = ["bootstrap"] }
 signal-criome = { git = "https://github.com/LiGoldragon/signal-criome.git", rev = "b85fe3408faa24b8439a3685396430a68bfbcb71", default-features = false }
 signal-sema-translator = { git = "https://github.com/LiGoldragon/signal-sema-translator.git", rev = "3a26cb43f8ce7f9fe85da64d19aa55aa662943ce" }

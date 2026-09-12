@@ -30,17 +30,24 @@ fn default_runtime_tree_excludes_bootstrap_and_retired_crates() {
 }
 
 #[test]
-fn lockfile_has_one_exact_generator_and_ordinary_interface() {
+fn lockfile_has_one_ordinary_interface_and_the_matching_generator() {
     const LOCKFILE: &str = include_str!("../Cargo.lock");
 
-    assert_eq!(LOCKFILE.matches("name = \"schema-rust\"").count(), 1);
+    // One ordinary producer Interface. Two signal-criome revisions would split
+    // the wire types this owner Interface re-exports.
+    assert_eq!(LOCKFILE.matches("name = \"signal-criome\"").count(), 1);
+    assert!(LOCKFILE.contains(
+        "signal-criome.git?rev=b85fe3408faa24b8439a3685396430a68bfbcb71#b85fe3408faa24b8439a3685396430a68bfbcb71"
+    ));
+
+    // This crate's own bootstrap generator is the revision build.rs is written
+    // against. Sibling contract crates carry their own generator revisions in
+    // their own build scripts; that duplication is build-only and is fenced by
+    // default_runtime_tree_excludes_bootstrap_and_retired_crates.
     assert!(LOCKFILE.contains(
         "schema-rust.git?rev=9e36587c85bd69357e9042729ba2df0052799756#9e36587c85bd69357e9042729ba2df0052799756"
     ));
-    assert_eq!(LOCKFILE.matches("name = \"signal-criome\"").count(), 1);
-    assert!(LOCKFILE.contains(
-        "signal-criome.git?rev=9436a3b8ffc2ee508ee1aaec807f5fe293187d59#9436a3b8ffc2ee508ee1aaec807f5fe293187d59"
-    ));
+
     assert!(!LOCKFILE.contains("name = \"schema-language\""));
 }
 
